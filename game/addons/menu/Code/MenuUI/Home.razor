@@ -16,6 +16,7 @@
 
 					@* Feeds live with the page they change - leave the front page and they go with it. *@
 					<div class="tabs">
+						@* FORK-VR: VisibleTabs instead of Tabs *@
 						@foreach ( var tab in VisibleTabs )
 						{
 							<Button Href="@tab.Url" Active="@(CurrentTab == tab)">@tab.Title</Button>
@@ -36,6 +37,7 @@
 					}
 					else
 					{
+						@* FORK-VR: GetQuery adds +vr in VR *@
 						<MenuProject.UI.PackageList Surface="home" Shelf=@CurrentTab.Name Query=@(GetQuery( CurrentTab )) Take=@(60) OnSelected=@Selected OnMenu=@Menu></MenuProject.UI.PackageList>
 					}
 				</div>
@@ -95,6 +97,7 @@
 		new( "roguelike", "#menu.home.roguelike", "sort:quality genre:roguelike" ),
 	];
 
+	// FORK-VR begin
 	/// <summary>
 	/// In VR every feed only lists VR games, so the curated Discover shelves would mostly come
 	/// up empty - hide it and open on Trending instead.
@@ -109,6 +112,7 @@
 
 	/// <summary>The feed the front page is currently showing.</summary>
 	public static FeedTab CurrentTab { get; private set; } = FindTab( null );
+	// FORK-VR end
 
 	// The navigator caches this page and re-applies query params through the
 	// setter on every visit, so the tab has to be picked here.

@@ -53,7 +53,7 @@ public class ModalSystem : IModalSystem
 	/// </summary>
 	protected void Push( Panel modal )
 	{
-		GetModalParent().AddChild( modal );
+		GetModalParent().AddChild( modal ); // FORK-VR: the flat overlay isn't drawn in the headset
 
 		modal.Style.ZIndex = (OpenModals.LastOrDefault()?.Style.ZIndex ?? 1000) + 10;
 
@@ -64,6 +64,7 @@ public class ModalSystem : IModalSystem
 		}
 	}
 
+	// FORK-VR begin
 	SboxMenu.VRModalHost _vrModalHost;
 
 	/// <summary>
@@ -82,6 +83,7 @@ public class ModalSystem : IModalSystem
 
 		return _vrModalHost;
 	}
+	// FORK-VR end
 
 	void OnModalClosing( BaseModal modal, bool success )
 	{
