@@ -96,6 +96,8 @@ public partial class MenuOverlay : RootPanel
 		// torn down (the avatar editor swaps the scene) - bring a new one back
 		if ( !MenuProject.PartyDeck.Instance.IsValid() )
 			AddChild<MenuProject.PartyDeck>();
+
+		SboxMenu.VROverlayRelay.Tick( this ); // FORK-VR: this root is drawn flat, where the headset can't see it
 	}
 
 	// No UpdateScale override - the root panel's own sizes things by screen height (1080 tall is 1:1),

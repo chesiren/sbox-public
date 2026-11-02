@@ -35,4 +35,37 @@ internal static class VRPanelPlacement
 	{
 		return worldWidth / (panelWidth * Sandbox.UI.WorldPanel.ScreenToWorldScale);
 	}
+
+	/// <summary>
+	/// Whether a panel at <paramref name="placed"/> has drifted from <paramref name="target"/> enough to start moving.
+	/// Following the head only past a dead zone keeps a panel still through small head movements, which is far less tiring than one glued to the view.
+	/// </summary>
+	public static bool ShouldFollow( Transform placed, Transform target, float maxAngle, float maxDistance )
+	{
+		return Vector3.GetAngle( placed.Rotation.Forward, target.Rotation.Forward ) > maxAngle
+			|| placed.Position.Distance( target.Position ) > maxDistance;
+	}
+
+	/// <summary>
+	/// Whether a following panel is close enough to <paramref name="target"/> to stop.
+	/// </summary>
+	public static bool HasArrived( Transform placed, Transform target )
+	{
+		return Vector3.GetAngle( placed.Rotation.Forward, target.Rotation.Forward ) < 1.0f
+			&& placed.Position.Distance( target.Position ) < 0.5f;
+	}
+
+	/// <summary>
+	/// Moves <paramref name="current"/> towards <paramref name="target"/>, covering the same share of the way per second whatever the frame rate.
+	/// <paramref name="speed"/> is how quickly it closes in: about 63% of the way is covered in 1/speed seconds.
+	/// </summary>
+	public static Transform Approach( Transform current, Transform target, float speed, float delta )
+	{
+		var fraction = 1.0f - MathF.Exp( -speed * delta );
+
+		return new Transform(
+			Vector3.Lerp( current.Position, target.Position, fraction ),
+			Rotation.Slerp( current.Rotation, target.Rotation, fraction ),
+			current.Scale );
+	}
 }

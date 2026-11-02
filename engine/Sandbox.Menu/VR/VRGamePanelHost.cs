@@ -6,27 +6,57 @@ using System;
 namespace Sandbox.VR;
 
 /// <summary>
-/// A world panel in the running game's scene, for the menu's UI in VR: the pause menu and the modals opened over the game.
-/// The menu overlay is drawn flat on the desktop window, which the headset never shows, and the menu scene is suspended in game.
-/// The panel belongs to the menu's UI system but sits in the game's world, so the game's stereo camera draws it.
+/// World panels in the running game's scene for the menu's UI in VR. The menu overlay is drawn flat on the desktop window,
+/// which the headset never shows, and the menu scene is suspended in game.
+/// The panels belong to the menu's UI system but sit in the game's world, so the game's stereo camera draws them.
 /// </summary>
 [Hide]
 public static class VRGamePanelHost
 {
 	/// <summary>
-	/// How far in front of the head the panel opens, in world units.
+	/// How far in front of the head the pause menu opens, in world units.
 	/// </summary>
 	public static float Distance { get; set; } = 60.0f;
 
 	/// <summary>
-	/// How wide the panel is, in world units.
+	/// How wide the pause menu is, in world units.
 	/// </summary>
 	public static float Width { get; set; } = 64.0f;
 
 	/// <summary>
-	/// How far below eye level the middle of the panel sits, in world units.
+	/// How far below eye level the middle of the pause menu sits, in world units.
 	/// </summary>
 	public static float Drop { get; set; } = 6.0f;
+
+	/// <summary>
+	/// How far in front of the head the HUD (toasts, chat, subtitles, loading) floats, in world units.
+	/// </summary>
+	public static float HudDistance { get; set; } = 50.0f;
+
+	/// <summary>
+	/// How wide the HUD is, in world units.
+	/// </summary>
+	public static float HudWidth { get; set; } = 56.0f;
+
+	/// <summary>
+	/// How far below eye level the middle of the HUD sits, in world units.
+	/// </summary>
+	public static float HudDrop { get; set; } = 4.0f;
+
+	/// <summary>
+	/// How far the head can turn, in degrees, before the HUD starts following.
+	/// </summary>
+	public static float HudFollowAngle { get; set; } = 25.0f;
+
+	/// <summary>
+	/// How far the head can move, in world units, before the HUD starts following.
+	/// </summary>
+	public static float HudFollowDistance { get; set; } = 12.0f;
+
+	/// <summary>
+	/// How quickly the HUD catches up once it follows.
+	/// </summary>
+	public static float HudFollowSpeed { get; set; } = 4.0f;
 
 	/// <summary>
 	/// The trigger has to be pulled this far to click.
@@ -38,31 +68,56 @@ public static class VRGamePanelHost
 	/// </summary>
 	static readonly Rect PanelBounds = new( -1920, -1080, 3840, 2160 );
 
-	static Sandbox.UI.WorldPanel _root;
+	/// <summary>
+	/// One world panel and the cursor drawn on it.
+	/// </summary>
+	sealed class Surface
+	{
+		public Sandbox.UI.WorldPanel Root;
+		public Panel Cursor;
+		public bool WasShowing;
+		public bool Following;
+
+		public bool IsShowing => Root.IsValid() && Root.ChildrenWantMouseInput;
+	}
+
+	static readonly Surface _menu = new();
+	static readonly Surface _hud = new();
+
 	static SceneWorld _world;
-	static Panel _cursor;
 	static SceneLineObject _beam;
 
 	static readonly WorldPanelInput _input = new();
 	static readonly List<RootPanel> _roots = new();
 
-	static bool _wasShowing;
 	static bool _useLeftHand;
 	static bool _menuWasDown;
 	static Panel _lastHovered;
+	static RealTimeSince _sinceTick;
 
 	/// <summary>
-	/// The panel to put the menu's UI on while a game runs in VR. Null outside VR, outside a game, or while the game has no camera.
+	/// The pause menu's panel: opens in front of the player whenever something interactive shows on it, then stays put.
+	/// Null outside VR, outside a game, or while the game has no camera.
 	/// </summary>
-	public static Panel HostPanel => EnsureRoot() ? _root : null;
+	public static Panel HostPanel => EnsureWorld() ? EnsureSurface( _menu, Distance, Drop, Width ) : null;
 
 	/// <summary>
-	/// Puts the panel back in front of the player's head.
+	/// The HUD's panel: floats ahead of the player and follows the head lazily, for toasts, chat, subtitles and loading.
+	/// Null outside VR, outside a game, or while the game has no camera.
+	/// </summary>
+	public static Panel HudPanel => EnsureWorld() ? EnsureSurface( _hud, HudDistance, HudDrop, HudWidth ) : null;
+
+	/// <summary>
+	/// Puts both panels back in front of the player's head.
 	/// </summary>
 	public static void Recenter()
 	{
-		if ( TryGetCamera( out var camera ) && _root.IsValid() )
-			Place( camera.WorldTransform );
+		if ( !TryGetCamera( out var camera ) )
+			return;
+
+		var head = camera.WorldTransform;
+		Place( _menu, head, Distance, Drop, Width );
+		Place( _hud, head, HudDistance, HudDrop, HudWidth );
 	}
 
 	/// <summary>
@@ -82,28 +137,39 @@ public static class VRGamePanelHost
 
 	internal static void Tick()
 	{
-		// Only made when something asks for it, so a game nobody pauses pays nothing
-		if ( !_root.IsValid() )
+		var delta = MathF.Min( _sinceTick, 0.1f );
+		_sinceTick = 0;
+
+		// Only made when something asks for them, so a game that never shows any menu UI pays nothing
+		if ( !_menu.Root.IsValid() && !_hud.Root.IsValid() )
 			return;
 
 		try
 		{
-			if ( !EnsureRoot() || !TryGetCamera( out var camera ) )
+			if ( !EnsureWorld() || !TryGetCamera( out var camera ) )
 				return;
 
 			var head = camera.WorldTransform;
 
-			// Opens in front of wherever the player is looking, then stays put in the world
-			var showing = _root.ChildrenWantMouseInput;
-			if ( showing && !_wasShowing ) Place( head );
-			_wasShowing = showing;
+			// The pause menu opens in front of wherever the player is looking, then stays put in the world
+			var menuShowing = _menu.IsShowing;
+			if ( menuShowing && !_menu.WasShowing ) Place( _menu, head, Distance, Drop, Width );
+			_menu.WasShowing = menuShowing;
 
-			if ( showing )
+			FollowHead( _hud, head, delta );
+
+			_roots.Clear();
+			if ( menuShowing ) _roots.Add( _menu.Root );
+			if ( _hud.IsShowing ) _roots.Add( _hud.Root );
+
+			if ( _roots.Count > 0 )
 				TickPointer( head );
 			else
 				HidePointer();
+
+			_roots.Clear();
 		}
-		catch ( System.Exception e )
+		catch ( Exception e )
 		{
 			Log.Error( e, "Error in VR game panel tick" );
 		}
@@ -115,7 +181,10 @@ public static class VRGamePanelHost
 		return camera.IsValid();
 	}
 
-	static bool EnsureRoot()
+	/// <summary>
+	/// Makes sure the panels live in the game's current world, dropping them when there's no game to put them in.
+	/// </summary>
+	static bool EnsureWorld()
 	{
 		var scene = GlobalContext.Game?.ActiveScene;
 		if ( !Application.IsVR || !Game.InGame || !scene.IsValid() || scene.SceneWorld is null )
@@ -124,29 +193,12 @@ public static class VRGamePanelHost
 			return false;
 		}
 
-		if ( _root.IsValid() && _world == scene.SceneWorld )
+		if ( _world == scene.SceneWorld )
 			return true;
 
-		// A new game scene has its own world, so the panel is made again in it
+		// A new game scene has its own world, so the panels are made again in it
 		Destroy();
-
-		using var _ = GlobalContext.MenuScope();
-
 		_world = scene.SceneWorld;
-		_root = new Sandbox.UI.WorldPanel( _world ) { PanelBounds = PanelBounds };
-
-		_cursor = _root.AddChild<Panel>();
-		_cursor.Style.Position = PositionMode.Absolute;
-		_cursor.Style.Width = 16;
-		_cursor.Style.Height = 16;
-		_cursor.Style.BorderTopLeftRadius = 8;
-		_cursor.Style.BorderTopRightRadius = 8;
-		_cursor.Style.BorderBottomLeftRadius = 8;
-		_cursor.Style.BorderBottomRightRadius = 8;
-		_cursor.Style.BackgroundColor = Color.White.WithAlpha( 0.8f );
-		_cursor.Style.PointerEvents = PointerEvents.None;
-		_cursor.Style.ZIndex = 100000;
-		_cursor.Style.Display = DisplayMode.None;
 
 		_beam = new SceneLineObject( _world );
 		_beam.RenderingEnabled = false;
@@ -157,10 +209,42 @@ public static class VRGamePanelHost
 		_beam.Flags.IsTranslucent = true;
 		_beam.Attributes.SetCombo( "D_BLEND", 1 );
 
-		if ( TryGetCamera( out var camera ) )
-			Place( camera.WorldTransform );
-
 		return true;
+	}
+
+	static Panel EnsureSurface( Surface surface, float distance, float drop, float width )
+	{
+		if ( surface.Root.IsValid() )
+			return surface.Root;
+
+		using var _ = GlobalContext.MenuScope();
+
+		surface.Root = new Sandbox.UI.WorldPanel( _world ) { PanelBounds = PanelBounds };
+		surface.Cursor = CreateCursor( surface.Root );
+		surface.WasShowing = false;
+		surface.Following = false;
+
+		if ( TryGetCamera( out var camera ) )
+			Place( surface, camera.WorldTransform, distance, drop, width );
+
+		return surface.Root;
+	}
+
+	static Panel CreateCursor( Panel root )
+	{
+		var cursor = root.AddChild<Panel>();
+		cursor.Style.Position = PositionMode.Absolute;
+		cursor.Style.Width = 16;
+		cursor.Style.Height = 16;
+		cursor.Style.BorderTopLeftRadius = 8;
+		cursor.Style.BorderTopRightRadius = 8;
+		cursor.Style.BorderBottomLeftRadius = 8;
+		cursor.Style.BorderBottomRightRadius = 8;
+		cursor.Style.BackgroundColor = Color.White.WithAlpha( 0.8f );
+		cursor.Style.PointerEvents = PointerEvents.None;
+		cursor.Style.ZIndex = 100000;
+		cursor.Style.Display = DisplayMode.None;
+		return cursor;
 	}
 
 	static void Destroy()
@@ -171,20 +255,58 @@ public static class VRGamePanelHost
 		_beam?.Delete();
 		_beam = null;
 
-		if ( _root.IsValid() )
-			_root.Delete( true );
+		DestroySurface( _menu );
+		DestroySurface( _hud );
 
-		_root = null;
-		_cursor = null;
 		_world = null;
-		_wasShowing = false;
 		_lastHovered = null;
 	}
 
-	static void Place( Transform head )
+	static void DestroySurface( Surface surface )
 	{
-		var transform = VRPanelPlacement.InFrontOf( head, Distance, Drop );
-		_root.Transform = transform.WithScale( VRPanelPlacement.ScaleForWidth( PanelBounds.Width, Width ) );
+		if ( surface.Root.IsValid() )
+			surface.Root.Delete( true );
+
+		surface.Root = null;
+		surface.Cursor = null;
+		surface.WasShowing = false;
+		surface.Following = false;
+	}
+
+	static Transform Target( Transform head, float distance, float drop, float width )
+	{
+		var transform = VRPanelPlacement.InFrontOf( head, distance, drop );
+		return transform.WithScale( VRPanelPlacement.ScaleForWidth( PanelBounds.Width, width ) );
+	}
+
+	static void Place( Surface surface, Transform head, float distance, float drop, float width )
+	{
+		if ( !surface.Root.IsValid() )
+			return;
+
+		surface.Root.Transform = Target( head, distance, drop, width );
+		surface.Following = false;
+	}
+
+	static void FollowHead( Surface surface, Transform head, float delta )
+	{
+		if ( !surface.Root.IsValid() )
+			return;
+
+		var target = Target( head, HudDistance, HudDrop, HudWidth );
+		var current = surface.Root.Transform;
+
+		if ( !surface.Following )
+		{
+			surface.Following = VRPanelPlacement.ShouldFollow( current, target, HudFollowAngle, HudFollowDistance );
+			if ( !surface.Following )
+				return;
+		}
+
+		surface.Root.Transform = VRPanelPlacement.Approach( current, target, HudFollowSpeed, delta );
+
+		if ( VRPanelPlacement.HasArrived( surface.Root.Transform, target ) )
+			surface.Following = false;
 	}
 
 	static void TickPointer( Transform head )
@@ -204,11 +326,7 @@ public static class VRGamePanelHost
 		_input.MouseLeftPressed = hand.Trigger.Value > PressThreshold;
 		_input.MouseRightPressed = hand.Grip.Value > PressThreshold;
 		_input.MouseWheel = hand.Joystick.Value;
-
-		_roots.Clear();
-		_roots.Add( _root );
 		_input.Tick( _roots, true );
-		_roots.Clear();
 
 		var hovered = _input.Hovered;
 		if ( hovered is not null && hovered != _lastHovered )
@@ -216,8 +334,12 @@ public static class VRGamePanelHost
 
 		_lastHovered = hovered;
 
-		UpdateCursor( hovered is not null );
-		UpdateBeam( ray, hovered is not null ? _root.WorldDistance : 0.0f, hovered is not null, hand.Trigger.Value );
+		var hoveredRoot = hovered?.FindRootPanel();
+		UpdateCursor( _menu, hoveredRoot );
+		UpdateCursor( _hud, hoveredRoot );
+
+		var hitRoot = hoveredRoot as Sandbox.UI.WorldPanel;
+		UpdateBeam( ray, hitRoot?.WorldDistance ?? 0.0f, hitRoot is not null, hand.Trigger.Value );
 	}
 
 	static void HidePointer()
@@ -226,26 +348,28 @@ public static class VRGamePanelHost
 		_input.Clear();
 		_lastHovered = null;
 
-		UpdateCursor( false );
+		UpdateCursor( _menu, null );
+		UpdateCursor( _hud, null );
 
 		if ( _beam.IsValid() )
 			_beam.RenderingEnabled = false;
 	}
 
-	static void UpdateCursor( bool visible )
+	static void UpdateCursor( Surface surface, RootPanel hoveredRoot )
 	{
-		if ( !_cursor.IsValid() )
+		if ( !surface.Cursor.IsValid() )
 			return;
 
-		_cursor.Style.Display = visible ? DisplayMode.Flex : DisplayMode.None;
+		var visible = hoveredRoot is not null && hoveredRoot == surface.Root;
+		surface.Cursor.Style.Display = visible ? DisplayMode.Flex : DisplayMode.None;
 		if ( !visible )
 			return;
 
-		var bounds = _root.Box.Rect;
-		var scale = _root.Scale;
+		var root = surface.Root;
+		var bounds = root.Box.Rect;
 
-		_cursor.Style.Left = (_root.WorldCursor.x - bounds.Left) / scale - 8;
-		_cursor.Style.Top = (_root.WorldCursor.y - bounds.Top) / scale - 8;
+		surface.Cursor.Style.Left = (root.WorldCursor.x - bounds.Left) / root.Scale - 8;
+		surface.Cursor.Style.Top = (root.WorldCursor.y - bounds.Top) / root.Scale - 8;
 	}
 
 	static void UpdateBeam( Ray ray, float distance, bool hit, float trigger )

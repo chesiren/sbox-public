@@ -54,8 +54,9 @@ Every commit that adds or removes a hook updates the registry below.
 | `FORK-VR.md` | This document |
 | `game/addons/menu/Code/VR/VRModalHost.cs` | Holds modals on a VR world panel, with the overlay's stylesheet |
 | `game/addons/menu/Code/VR/VRPointer.cs` | Controller pointer laser in the VR menu scene |
-| `game/addons/menu/Code/VR/VRUIHost.cs` | Picks where modals and the pause menu go in VR: menu world panel or in-game panel |
-| `engine/Sandbox.Menu/VR/VRGamePanelHost.cs` | World panel in the game's scene for the menu's UI in VR, with pointer, laser, cursor and haptics; menu button edge |
+| `game/addons/menu/Code/VR/VRUIHost.cs` | Picks where modals, the pause menu and the overlay's content go in VR: menu world panel, in-game panel or in-game HUD |
+| `game/addons/menu/Code/VR/VROverlayRelay.cs` | Moves toasts, chat, subtitles, mic, loading screen and stray modals off the flat overlay in VR, and remakes them when their host goes |
+| `engine/Sandbox.Menu/VR/VRGamePanelHost.cs` | World panels in the game's scene for the menu's UI in VR: a world-locked pause menu and a head-following HUD, with pointer, laser, cursor and haptics; menu button edge |
 | `engine/Sandbox.Engine/Systems/Input/VR/VRController.Menu.cs` | `VRController.ButtonMenu` |
 | `engine/Sandbox.Engine/Systems/Input/VR/VRPanelPlacement.cs` | Pure placement math for VR panels |
 | `engine/Tests/Sandbox.Test.Unit/VR/VRPanelPlacementTest.cs` | Unit tests for `VRPanelPlacement` |
@@ -74,6 +75,7 @@ The `game/addons/menu/Code/VR/` folder also holds upstream files, such as
 | `CLAUDE.md` | `@FORK-VR.md` | Load these conventions in every session |
 | `engine/Sandbox.Engine/Scene/Components/UI/WorldInput.cs` | `Game.IsRunningInVR` block moved before the mouse block | The desktop cursor must not steal the ray |
 | `game/addons/menu/Code/ModalSystem.cs` | One-line `GetModalParent()` delegating to `VRUIHost`; `Push` and `PauseMenu` call it | The flat overlay isn't drawn in the headset |
+| `game/addons/menu/Code/Overlay/MenuOverlay.cs` | `VROverlayRelay.Tick( this )` at the end of `Tick` | Move the overlay's content where the headset sees it |
 | `engine/Sandbox.Engine/Platform/VR/VRSystem.Input.cs` | `menu` action string and `ButtonMenu` enum value | Read the menu button declared in the fpxr manifests |
 | `engine/Sandbox.Engine/Systems/Input/VR/VRController.cs` | `ButtonMenu` updated in `Update()` | Same |
 | `engine/Sandbox.Menu/MenuDll.cs` | `VRGamePanelHost.Tick()` in `Tick`; menu button ORed with Escape in `LateTick` | Drive the in-game VR panel; pause from the controller |
@@ -106,3 +108,15 @@ formatting are checked. The items below still need testing in a headset (`sbox.e
   - [ ] changing scene with the pause menu open, and quitting to the menu, leave no stray panel or crash;
   - [ ] the trigger also reaches the game while the menu is open (known: games reading `Input.VR` directly aren't blocked);
   - [ ] flat screen, without `-vr`: Escape, pause menu and modals unchanged.
+- [ ] Milestone B, feedback visible in VR:
+  - [ ] in the VR menu, toasts (`MenuOverlay.Show`), questions and party invites show on the menu panel and their buttons can be clicked;
+  - [ ] a question is answered with the laser before its 10 s timeout;
+  - [ ] in game, toasts, chat, subtitles and the mic meter float on the HUD, which stays still for small head moves and catches up past about 25 degrees or 12 units;
+  - [ ] the HUD is readable and comfortable: tune `HudDistance`, `HudWidth`, `HudDrop` and the follow settings if not;
+  - [ ] the HUD isn't hidden by nearby walls (world panels are drawn with the scene);
+  - [ ] the laser shows over the HUD only while something on it can be clicked;
+  - [ ] a modal opened right at startup (`-rungame`, invite) or while switching to the VR menu scene ends up on the VR panel;
+  - [ ] loading a game from the VR menu: the loading screen shows on the menu panel, then on the HUD once the game's camera exists; note what the headset shows before that;
+  - [ ] the avatar editor round trip and quitting a game don't lose toasts (they're remade on the overlay and moved again);
+  - [ ] the party deck stays where it is (not relayed yet);
+  - [ ] flat screen, without `-vr`: toasts, chat and loading screen unchanged.
