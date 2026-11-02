@@ -67,6 +67,8 @@ Every commit that adds or removes a hook updates the registry below.
 | `game/addons/menu/Code/VR/VRMenuRig.cs` | Mirrors the VR menu scene's right-hand pointers onto the left hand at runtime; applies the pointer hand setting |
 | `game/addons/menu/Code/VR/VRPackageFilter.cs` | Adds `+vr` to game queries in VR |
 | `game/addons/menu/Code/VR/SettingsCatalog.VR.cs` | The VR settings page; hides the display page in VR |
+| `engine/Sandbox.Menu/VR/VRMenuPlacement.cs` | Public `AnchorFor` for the menu addon |
+| `game/addons/menu/Code/VR/VRFlatScene.cs` | Rigs the menu's flat scenes (avatar editor, crate opening) for VR at runtime; pointer ray and trigger click for their 3D interactions |
 | `engine/Sandbox.Menu/VR/VRKeyboard.cs` | On-screen keyboard for the menu's text fields on world panels |
 | `engine/Sandbox.Engine/Scene/Components/UI/ScreenPanel.VR.cs` | In VR, a screen panel is drawn on a head-following world panel; `ShowInVR` opts out |
 
@@ -85,6 +87,9 @@ The `game/addons/menu/Code/VR/` folder also holds upstream files, such as
 | `engine/Sandbox.Engine/Scene/Components/UI/WorldInput.cs` | `Game.IsRunningInVR` block moved before the mouse block; grip right-clicks; stick through `VRStick` | The desktop cursor must not steal the ray; context menus and usable scrolling in VR |
 | `engine/Sandbox.Engine/Scene/Components/UI/ScreenPanel.cs` | `partial`; one-line calls to `ScreenPanel.VR.cs` in `OnAwake`, `OnEnabled`, `OnDisabled`, `OnDestroy`, `GetPanel`, `OnUpdate` | Game HUDs reach the headset |
 | `engine/Sandbox.Engine/Systems/UI/UISystem.cs` | `TickWorldInput` also collects screen panels drawn on world panels | World inputs can click game HUDs in VR |
+| `game/addons/menu/Code/AvatarEditor/AvatarEditManager.Camera.cs` | `UpdateCamera` stands down in VR; the eyes follow `VRFlatScene.PointerRay` | The headset moves the camera |
+| `game/addons/menu/Code/RewardOpening/RewardUnboxCamera.cs` | `OnUpdate` stands down in VR | Same |
+| `game/addons/menu/Code/RewardOpening/RewardCard.cs`, `RewardUnboxCrate.cs` | Pointer ray and trigger click alongside the mouse | Pick cards and bump the crate with the controller |
 | `engine/Sandbox.Menu/MenuUtility.cs` | `VRDesktopLinks.Opened( path )` in `OpenUrl` and `OpenFolder` | Tell the player a link opened where the headset doesn't show |
 | `game/addons/menu/Code/MenuHelpers.cs` | `LaunchGame` VR shortcut removed | The game page shows on the VR menu panel now |
 | `game/addons/menu/Code/Settings/SettingsCatalog.cs` | `partial`, `AddVR()` in the constructor | VR settings page |
@@ -159,7 +164,17 @@ formatting are checked. The items below still need testing in a headset (`sbox.e
   - [ ] the menu's own screen panel in `menu-main.scene` doesn't flash in the headset before the VR menu scene loads;
   - [ ] flat screen, without `-vr`: no keyboard, screen panels unchanged.
 
+- [ ] Milestone E, flat menu scenes and comfort:
+  - [ ] the avatar editor opens in the headset, standing where its camera was, facing the avatar; its UI floats ahead and the lasers click it;
+  - [ ] the avatar's eyes follow the right hand's laser; walking around the avatar works in place of the mouse orbit;
+  - [ ] crate opening: the right laser and trigger bump the crate and pick the reward cards; the camera no longer drifts on its own;
+  - [ ] leaving either scene back to the VR menu works;
+  - [ ] a short press of the menu button pauses; holding it about a second recenters the in-game panels without pausing;
+  - [ ] flat screen, without `-vr`: avatar editor and crate opening unchanged.
+
 ## Open work
+
+- **Avatar editor in VR** has no orbit or zoom and no hand models; turning the avatar with the stick would help.
 
 - **Key binding capture in VR.** `KeyBind.razor` captures keyboard and gamepad buttons only; VR controller
   buttons can't be bound from the settings page.

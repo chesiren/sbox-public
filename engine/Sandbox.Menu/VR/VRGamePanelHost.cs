@@ -91,7 +91,16 @@ public static class VRGamePanelHost
 	}
 
 	/// <summary>
-	/// True on the frame either controller's menu button goes down.
+	/// Holding the menu button this long recenters the panels instead of pausing.
+	/// </summary>
+	const float RecenterHoldTime = 0.8f;
+
+	static RealTimeSince _menuDownFor;
+	static bool _menuHeldToRecenter;
+
+	/// <summary>
+	/// True on the frame a short press of either controller's menu button ends, which pauses like Escape.
+	/// Holding it instead recenters the panels in front of the player, without pausing.
 	/// </summary>
 	internal static bool MenuButtonPressed()
 	{
@@ -99,10 +108,28 @@ public static class VRGamePanelHost
 			return false;
 
 		var down = vr.LeftHand.ButtonMenu.IsPressed || vr.RightHand.ButtonMenu.IsPressed;
-		var pressed = down && !_menuWasDown;
+		var wasDown = _menuWasDown;
 		_menuWasDown = down;
 
-		return pressed;
+		if ( down && !wasDown )
+		{
+			_menuDownFor = 0;
+			_menuHeldToRecenter = false;
+			return false;
+		}
+
+		if ( down )
+		{
+			if ( !_menuHeldToRecenter && _menuDownFor > RecenterHoldTime )
+			{
+				_menuHeldToRecenter = true;
+				Recenter();
+			}
+
+			return false;
+		}
+
+		return wasDown && !_menuHeldToRecenter;
 	}
 
 	internal static void Tick()

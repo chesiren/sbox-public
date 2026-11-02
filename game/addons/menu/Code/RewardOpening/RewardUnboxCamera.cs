@@ -43,6 +43,7 @@ public sealed class RewardUnboxCamera : Component
 
 	protected override void OnUpdate()
 	{
+		if ( SboxMenu.VRFlatScene.IsActive( Scene ) ) return; // FORK-VR: the headset moves the camera
 		if ( Crate == null ) return;
 
 		float dt = Time.Delta;

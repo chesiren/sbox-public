@@ -135,4 +135,22 @@ public class VRPanelPlacementTest
 
 		Assert.AreEqual( 40f, current.Position.x, 0.5f );
 	}
+
+	/// <summary>
+	/// The anchor puts the tracked head where the view was and turns the play area so the head looks the view's way.
+	/// </summary>
+	[TestMethod]
+	public void AnchorForPutsHeadAtView()
+	{
+		var head = new Transform( new Vector3( 10, 5, 64 ), new Angles( 20, 30, 0 ).ToRotation() );
+		var view = new Transform( new Vector3( 200, -50, 40 ), new Angles( 0, 90, 0 ).ToRotation() );
+
+		var anchor = VRPanelPlacement.AnchorFor( head, view );
+		var world = anchor.ToWorld( head );
+
+		Assert.AreEqual( 200f, world.Position.x, 0.01f );
+		Assert.AreEqual( -50f, world.Position.y, 0.01f );
+		Assert.AreEqual( 40f, world.Position.z, 0.01f );
+		Assert.AreEqual( 90f, world.Rotation.Yaw(), 0.1f );
+	}
 }

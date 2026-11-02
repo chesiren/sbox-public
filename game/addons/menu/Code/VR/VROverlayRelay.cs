@@ -28,6 +28,7 @@ public static class VROverlayRelay
 
 		// Rides on the overlay's tick, which runs every frame in the menu's scope, to save more hooks upstream
 		VRMenuRig.Ensure();
+		VRFlatScene.Ensure();
 
 		if ( !_listening )
 		{
