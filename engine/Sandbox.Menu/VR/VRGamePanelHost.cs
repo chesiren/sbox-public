@@ -29,21 +29,6 @@ public static class VRGamePanelHost
 	public static float HudDrop { get; set; } = 4.0f;
 
 	/// <summary>
-	/// How far the head can turn, in degrees, before the HUD starts following.
-	/// </summary>
-	public static float HudFollowAngle { get; set; } = 25.0f;
-
-	/// <summary>
-	/// How far the head can move, in world units, before the HUD starts following.
-	/// </summary>
-	public static float HudFollowDistance { get; set; } = 12.0f;
-
-	/// <summary>
-	/// How quickly the HUD catches up once it follows.
-	/// </summary>
-	public static float HudFollowSpeed { get; set; } = 4.0f;
-
-	/// <summary>
 	/// The trigger has to be pulled this far to click.
 	/// </summary>
 	const float PressThreshold = 0.75f;
@@ -61,7 +46,7 @@ public static class VRGamePanelHost
 		public Sandbox.UI.WorldPanel Root;
 		public Panel Cursor;
 		public bool WasShowing;
-		public bool Following;
+		public readonly VRHeadFollow Follow = new();
 
 		public bool IsShowing => Root.IsValid() && Root.ChildrenWantMouseInput;
 	}
@@ -124,6 +109,16 @@ public static class VRGamePanelHost
 	{
 		var delta = MathF.Min( _sinceTick, 0.1f );
 		_sinceTick = 0;
+
+		try
+		{
+			// Fields on the VR menu's panel need it as much as those on the in-game panels
+			VRKeyboard.TickFocus();
+		}
+		catch ( Exception e )
+		{
+			Log.Error( e, "Error in VR keyboard tick" );
+		}
 
 		// Only made when something asks for them, so a game that never shows any menu UI pays nothing
 		if ( !_menu.Root.IsValid() && !_hud.Root.IsValid() )
@@ -207,7 +202,7 @@ public static class VRGamePanelHost
 		surface.Root = new Sandbox.UI.WorldPanel( _world ) { PanelBounds = PanelBounds };
 		surface.Cursor = CreateCursor( surface.Root );
 		surface.WasShowing = false;
-		surface.Following = false;
+		surface.Follow.Stop();
 
 		if ( TryGetCamera( out var camera ) )
 			Place( surface, camera.WorldTransform, distance, drop, width );
@@ -255,7 +250,7 @@ public static class VRGamePanelHost
 		surface.Root = null;
 		surface.Cursor = null;
 		surface.WasShowing = false;
-		surface.Following = false;
+		surface.Follow.Stop();
 	}
 
 	static Transform Target( Transform head, float distance, float drop, float width )
@@ -270,7 +265,7 @@ public static class VRGamePanelHost
 			return;
 
 		surface.Root.Transform = Target( head, distance, drop, width );
-		surface.Following = false;
+		surface.Follow.Stop();
 	}
 
 	static void FollowHead( Surface surface, Transform head, float delta )
@@ -279,19 +274,7 @@ public static class VRGamePanelHost
 			return;
 
 		var target = Target( head, HudDistance, HudDrop, HudWidth );
-		var current = surface.Root.Transform;
-
-		if ( !surface.Following )
-		{
-			surface.Following = VRPanelPlacement.ShouldFollow( current, target, HudFollowAngle, HudFollowDistance );
-			if ( !surface.Following )
-				return;
-		}
-
-		surface.Root.Transform = VRPanelPlacement.Approach( current, target, HudFollowSpeed, delta );
-
-		if ( VRPanelPlacement.HasArrived( surface.Root.Transform, target ) )
-			surface.Following = false;
+		surface.Root.Transform = surface.Follow.Tick( surface.Root.Transform, target, delta );
 	}
 
 	static void TickPointer( Transform head, float delta )

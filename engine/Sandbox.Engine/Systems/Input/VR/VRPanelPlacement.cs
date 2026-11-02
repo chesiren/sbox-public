@@ -66,6 +66,43 @@ internal static class VRPanelPlacement
 		return new Transform(
 			Vector3.Lerp( current.Position, target.Position, fraction ),
 			Rotation.Slerp( current.Rotation, target.Rotation, fraction ),
-			current.Scale );
+			target.Scale );
 	}
+}
+
+/// <summary>
+/// Keeps a panel ahead of the head without gluing it to the view: it stays still inside a dead zone,
+/// then catches up smoothly and stops again once it's there.
+/// </summary>
+internal sealed class VRHeadFollow
+{
+	public float MaxAngle { get; set; } = 25.0f;
+	public float MaxDistance { get; set; } = 12.0f;
+	public float Speed { get; set; } = 4.0f;
+
+	bool _following;
+
+	/// <summary>
+	/// Where the panel goes this frame, from where it is and where it would ideally be.
+	/// </summary>
+	public Transform Tick( Transform current, Transform target, float delta )
+	{
+		if ( !_following )
+		{
+			_following = VRPanelPlacement.ShouldFollow( current, target, MaxAngle, MaxDistance );
+			if ( !_following )
+				return current.WithScale( target.Scale );
+		}
+
+		var moved = VRPanelPlacement.Approach( current, target, Speed, delta );
+		if ( VRPanelPlacement.HasArrived( moved, target ) )
+			_following = false;
+
+		return moved;
+	}
+
+	/// <summary>
+	/// Forget any follow in progress, after the panel was put somewhere directly.
+	/// </summary>
+	public void Stop() => _following = false;
 }

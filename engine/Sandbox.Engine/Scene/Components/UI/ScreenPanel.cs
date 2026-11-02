@@ -10,7 +10,7 @@ namespace Sandbox;
 [Icon( "desktop_windows" )]
 [EditorHandle( "materials/gizmo/ui.png" )]
 [Alias( "PanelRoot" )]
-public sealed class ScreenPanel : Component, IRootPanelComponent
+public sealed partial class ScreenPanel : Component, IRootPanelComponent // FORK-VR: partial for the VR panel
 {
 	[Property, Range( 0, 1 )] public float Opacity { get; set; } = 1.0f;
 	[Property, Range( 0, 5 )] public float Scale { get; set; } = 1.0f;
@@ -59,6 +59,8 @@ public sealed class ScreenPanel : Component, IRootPanelComponent
 
 	protected override void OnAwake()
 	{
+		if ( CreateVRPanel() ) return; // FORK-VR: flat panels never reach the headset
+
 		rootPanel = new GameRootPanel();
 		rootPanel.GameObject = GameObject;
 		rootPanel.RenderedManually = true;
@@ -69,6 +71,8 @@ public sealed class ScreenPanel : Component, IRootPanelComponent
 
 	protected override void OnEnabled()
 	{
+		if ( EnableVRPanel() ) return; // FORK-VR
+
 		if ( !rootPanel.IsValid() )
 			return;
 
@@ -85,6 +89,8 @@ public sealed class ScreenPanel : Component, IRootPanelComponent
 
 	protected override void OnDisabled()
 	{
+		if ( DisableVRPanel() ) return; // FORK-VR
+
 		// todo disable rootpanel
 		if ( !rootPanel.IsValid() )
 			return;
@@ -94,17 +100,22 @@ public sealed class ScreenPanel : Component, IRootPanelComponent
 
 	protected override void OnDestroy()
 	{
+		DestroyVRPanel(); // FORK-VR
 		rootPanel?.Delete();
 		rootPanel = null;
 	}
 
 	public Panel GetPanel()
 	{
+		if ( _vrPanel.IsValid() ) return _vrPanel; // FORK-VR
+
 		return rootPanel;
 	}
 
 	protected override void OnUpdate()
 	{
+		if ( UpdateVRPanel() ) return; // FORK-VR
+
 		if ( !rootPanel.IsValid() )
 			return;
 

@@ -410,6 +410,10 @@ internal partial class UISystem
 				collected = true;
 				foreach ( var worldPanel in scene.Query<WorldPanel>() )
 					worldPanels.Add( worldPanel.GetPanel() as RootPanel );
+
+				// FORK-VR: in VR a screen panel is drawn on a world panel, which world inputs should reach too
+				foreach ( var screenPanel in scene.Query<ScreenPanel>() )
+					if ( screenPanel.GetPanel() is Sandbox.UI.WorldPanel vrPanel ) worldPanels.Add( vrPanel );
 			}
 
 			worldInput.WorldPanelInput.Tick( worldPanels, true );
