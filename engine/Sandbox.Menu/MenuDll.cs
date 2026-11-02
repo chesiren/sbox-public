@@ -362,6 +362,7 @@ internal sealed class MenuDll : IMenuDll
 		}
 
 		MenuUtility.Tick?.Invoke();
+		Sandbox.VR.VRGamePanelHost.Tick(); // FORK-VR: pointer and placement of the in-game VR menu panel
 
 		// Run any pending queue'd mainthread tasks here
 		// so they're in the same scene scope
@@ -373,7 +374,8 @@ internal sealed class MenuDll : IMenuDll
 	{
 		using var _ = EnterScope();
 
-		if ( Input.EscapePressed && IGameInstance.Current is not null && !Application.IsEditor )
+		var escape = Input.EscapePressed | Sandbox.VR.VRGamePanelHost.MenuButtonPressed(); // FORK-VR: the controller's menu button pauses too
+		if ( escape && IGameInstance.Current is not null && !Application.IsEditor )
 		{
 			Input.EscapePressed = false;
 			IModalSystem.Current?.PauseMenu();

@@ -64,26 +64,7 @@ public class ModalSystem : IModalSystem
 		}
 	}
 
-	// FORK-VR begin
-	SboxMenu.VRModalHost _vrModalHost;
-
-	/// <summary>
-	/// Where modals go - the overlay, or in the VR menu the menu's world panel, since the overlay's drawn
-	/// flat on the screen where the headset can't see it.
-	/// </summary>
-	Panel GetModalParent()
-	{
-		var menu = MenuProject.MainMenu.Instance?.Panel;
-		if ( !Application.IsVR || Sandbox.Game.InGame || !menu.IsValid() )
-			return MenuOverlay.Instance;
-
-		// The menu's panel is made again when its scene is
-		if ( !_vrModalHost.IsValid() || _vrModalHost.Parent != menu )
-			_vrModalHost = menu.AddChild<SboxMenu.VRModalHost>();
-
-		return _vrModalHost;
-	}
-	// FORK-VR end
+	static Panel GetModalParent() => SboxMenu.VRUIHost.GetModalParent() ?? MenuOverlay.Instance; // FORK-VR
 
 	void OnModalClosing( BaseModal modal, bool success )
 	{
@@ -286,7 +267,7 @@ public class ModalSystem : IModalSystem
 			return;
 		}
 
-		MenuOverlay.Instance.AddChild( new PauseModal() );
+		GetModalParent().AddChild( new PauseModal() ); // FORK-VR
 	}
 
 	public void Player( SteamId steamid, string page = "" )
