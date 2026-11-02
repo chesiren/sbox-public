@@ -52,8 +52,17 @@ Every commit that adds or removes a hook updates the registry below.
 | File | Purpose |
 |---|---|
 | `FORK-VR.md` | This document |
-| `game/addons/menu/Code/VR/VRModalHost.cs` | Hosts modals on the VR menu's world panel |
-| `game/addons/menu/Code/VR/VRPointer.cs` | Controller pointer laser |
+| `game/addons/menu/Code/VR/VRModalHost.cs` | Holds modals on a VR world panel, with the overlay's stylesheet |
+| `game/addons/menu/Code/VR/VRPointer.cs` | Controller pointer laser in the VR menu scene |
+| `game/addons/menu/Code/VR/VRUIHost.cs` | Picks where modals and the pause menu go in VR: menu world panel or in-game panel |
+| `engine/Sandbox.Menu/VR/VRGamePanelHost.cs` | World panel in the game's scene for the menu's UI in VR, with pointer, laser, cursor and haptics; menu button edge |
+| `engine/Sandbox.Engine/Systems/Input/VR/VRController.Menu.cs` | `VRController.ButtonMenu` |
+| `engine/Sandbox.Engine/Systems/Input/VR/VRPanelPlacement.cs` | Pure placement math for VR panels |
+| `engine/Tests/Sandbox.Test.Unit/VR/VRPanelPlacementTest.cs` | Unit tests for `VRPanelPlacement` |
+
+The menu addon has no access to engine internals (such as `WorldPanelInput`), but `Sandbox.Menu`
+does and the addon references it. Engine-side VR UI code for the menu therefore goes in
+`engine/Sandbox.Menu/VR/`, with a public API the addon calls.
 
 The `game/addons/menu/Code/VR/` folder also holds upstream files, such as
 `VRSceneSwitcher.cs`. Only the `FORK-VR` header tells fork files apart.
@@ -64,7 +73,10 @@ The `game/addons/menu/Code/VR/` folder also holds upstream files, such as
 |---|---|---|
 | `CLAUDE.md` | `@FORK-VR.md` | Load these conventions in every session |
 | `engine/Sandbox.Engine/Scene/Components/UI/WorldInput.cs` | `Game.IsRunningInVR` block moved before the mouse block | The desktop cursor must not steal the ray |
-| `game/addons/menu/Code/ModalSystem.cs` | `Push` calls `GetModalParent()`, plus the `GetModalParent` block | The flat overlay isn't drawn in the headset |
+| `game/addons/menu/Code/ModalSystem.cs` | One-line `GetModalParent()` delegating to `VRUIHost`; `Push` and `PauseMenu` call it | The flat overlay isn't drawn in the headset |
+| `engine/Sandbox.Engine/Platform/VR/VRSystem.Input.cs` | `menu` action string and `ButtonMenu` enum value | Read the menu button declared in the fpxr manifests |
+| `engine/Sandbox.Engine/Systems/Input/VR/VRController.cs` | `ButtonMenu` updated in `Update()` | Same |
+| `engine/Sandbox.Menu/MenuDll.cs` | `VRGamePanelHost.Tick()` in `Tick`; menu button ORed with Escape in `LateTick` | Drive the in-game VR panel; pause from the controller |
 | `game/addons/menu/Code/MenuUI/Home.razor` | `VisibleTabs`, `GetQuery` (`+vr`) | Home feeds only list VR games |
 | `game/addons/menu/Code/MenuUI/Components/Multiplayer/MultiplayerServers.razor` | `IsVrGame` filter | Only servers of VR games are listed |
 | `game/addons/menu/Assets/scenes/menu-main.scene` | "VR Scene Switcher" object | Loads `menu-vr.scene` in VR |
@@ -82,3 +94,15 @@ formatting are checked. The items below still need testing in a headset (`sbox.e
   - [ ] the laser stops on the panel;
   - [ ] the desktop mouse doesn't move the ray;
   - [ ] only VR games and servers are listed.
+- [ ] Milestone A, pause menu in game:
+  - [ ] the menu button (left Touch controller) opens and closes the pause menu; no `Facepunch.XR` warning spam in the console from the new `menu` action;
+  - [ ] on Index controllers, find which button the `menu` action reaches (`valve_knuckles.json` maps the left hand to `/input/menu/click`, which Index may not have);
+  - [ ] the pause menu opens about 1.5 m ahead at eye level, upright, facing the player, and stays put when the head moves;
+  - [ ] it's readable: tune `VRGamePanelHost.Distance`, `Width` and `Drop` if not;
+  - [ ] the laser and cursor follow the hand that last pulled its trigger, trigger clicks, grip right-clicks, the stick scrolls;
+  - [ ] hovering gives a light haptic tick;
+  - [ ] modals opened from the pause menu (settings, friends, servers) show on the same panel;
+  - [ ] in a game without a `VRAnchor`, the laser still starts at the controller;
+  - [ ] changing scene with the pause menu open, and quitting to the menu, leave no stray panel or crash;
+  - [ ] the trigger also reaches the game while the menu is open (known: games reading `Input.VR` directly aren't blocked);
+  - [ ] flat screen, without `-vr`: Escape, pause menu and modals unchanged.

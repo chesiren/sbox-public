@@ -8,14 +8,16 @@ internal static unsafe partial class VRSystem
 	{
 		"/actions/default/in/joystick_button",
 		"/actions/default/in/button_a",
-		"/actions/default/in/button_b"
+		"/actions/default/in/button_b",
+		"/actions/default/in/menu" // FORK-VR: declared in the fpxr manifests but never read
 	};
 
 	public enum BooleanAction
 	{
 		JoystickPress,
 		ButtonA,
-		ButtonB
+		ButtonB,
+		ButtonMenu // FORK-VR
 	};
 
 	private static readonly string[] FloatActionStrings =

@@ -44,6 +44,7 @@ public sealed partial record VRController : TrackedObject
 		JoystickPress = new DigitalInput( JoystickPress, VRSystem.BooleanAction.JoystickPress, _trackedDevice.InputSource );
 		ButtonA = new DigitalInput( ButtonA, VRSystem.BooleanAction.ButtonA, _trackedDevice.InputSource );
 		ButtonB = new DigitalInput( ButtonB, VRSystem.BooleanAction.ButtonB, _trackedDevice.InputSource );
+		ButtonMenu = new DigitalInput( ButtonMenu, VRSystem.BooleanAction.ButtonMenu, _trackedDevice.InputSource ); // FORK-VR
 
 		_handJoints.Pose = VRSystem.GetHandPoseState( _trackedDevice.InputSource, MotionRange.Hand );
 		_conformingJoints.Pose = VRSystem.GetHandPoseState( _trackedDevice.InputSource, MotionRange.Controller );
