@@ -29,11 +29,15 @@ Everything in this fork is written in English: code, comments, docs, commit mess
   `VR/` folder or in a file whose name starts with `VR`.
 - **Changed line in an upstream file:** `// FORK-VR: <why>` at the end of the line or just above.
 - **Changed block in an upstream file:** wrap it in `// FORK-VR begin` and `// FORK-VR end`.
-- **Commits:** prefix the message with `vr:`.
+- **Commits:** written the way Facepunch writes theirs, so the fork's history reads like upstream's:
+  - the title starts with `VR: `, so the fork's commits are easy to find, then a short imperative
+    sentence, capitalised, with no full stop ("VR: Open the pause menu on a world panel in VR");
+  - the body is empty, or a list of `* ` bullets separated by blank lines;
+  - no test notes in the message: what's left to test lives in the checklist below.
 - **Finding everything:**
   - `git grep -n "FORK-VR"`
   - `git diff --name-status master...HEAD`
-  - `git log --grep "^vr:"`
+  - `git log --grep "^VR: "`
 
 Every commit that adds or removes a hook updates the registry below.
 
