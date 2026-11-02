@@ -183,6 +183,8 @@ public static partial class MenuUtility
 			UseShellExecute = true,
 			Verb = "open"
 		} );
+
+		Sandbox.VR.VRDesktopLinks.Opened( path ); // FORK-VR: the headset doesn't show the desktop
 	}
 
 	/// <summary>
@@ -202,6 +204,8 @@ public static partial class MenuUtility
 			UseShellExecute = true,
 			Verb = "open"
 		} );
+
+		Sandbox.VR.VRDesktopLinks.Opened( path ); // FORK-VR: the headset doesn't show the desktop
 	}
 
 	static readonly System.Text.RegularExpressions.Regex SteamUrl = new( @"^steam://(store/\d+|install/\d+|url/CommunityFilePage/\d+)/?$", System.Text.RegularExpressions.RegexOptions.CultureInvariant );

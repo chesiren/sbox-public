@@ -60,6 +60,13 @@ Every commit that adds or removes a hook updates the registry below.
 | `engine/Sandbox.Engine/Systems/Input/VR/VRController.Menu.cs` | `VRController.ButtonMenu` |
 | `engine/Sandbox.Engine/Systems/Input/VR/VRPanelPlacement.cs` | Pure placement math for VR panels |
 | `engine/Tests/Sandbox.Test.Unit/VR/VRPanelPlacementTest.cs` | Unit tests for `VRPanelPlacement` |
+| `engine/Sandbox.Engine/Systems/Input/VR/VRStick.cs` | Stick to scroll wheel, with dead zone and curve |
+| `engine/Tests/Sandbox.Test.Unit/VR/VRStickTest.cs` | Unit tests for `VRStick` and `VRPreferences.CanPoint` |
+| `engine/Sandbox.Engine/Platform/VR/VRPreferences.cs` | Saved `vr_ui_*` convars: panel distance and size, HUD follow, pointer hand, scroll speed |
+| `engine/Sandbox.Menu/VR/VRDesktopLinks.cs` | Event raised when a link or folder opens on the desktop in VR |
+| `game/addons/menu/Code/VR/VRMenuRig.cs` | Mirrors the VR menu scene's right-hand pointers onto the left hand at runtime; applies the pointer hand setting |
+| `game/addons/menu/Code/VR/VRPackageFilter.cs` | Adds `+vr` to game queries in VR |
+| `game/addons/menu/Code/VR/SettingsCatalog.VR.cs` | The VR settings page; hides the display page in VR |
 
 The menu addon has no access to engine internals (such as `WorldPanelInput`), but `Sandbox.Menu`
 does and the addon references it. Engine-side VR UI code for the menu therefore goes in
@@ -73,7 +80,12 @@ The `game/addons/menu/Code/VR/` folder also holds upstream files, such as
 | File | Hook | Reason |
 |---|---|---|
 | `CLAUDE.md` | `@FORK-VR.md` | Load these conventions in every session |
-| `engine/Sandbox.Engine/Scene/Components/UI/WorldInput.cs` | `Game.IsRunningInVR` block moved before the mouse block | The desktop cursor must not steal the ray |
+| `engine/Sandbox.Engine/Scene/Components/UI/WorldInput.cs` | `Game.IsRunningInVR` block moved before the mouse block; grip right-clicks; stick through `VRStick` | The desktop cursor must not steal the ray; context menus and usable scrolling in VR |
+| `engine/Sandbox.Menu/MenuUtility.cs` | `VRDesktopLinks.Opened( path )` in `OpenUrl` and `OpenFolder` | Tell the player a link opened where the headset doesn't show |
+| `game/addons/menu/Code/MenuHelpers.cs` | `LaunchGame` VR shortcut removed | The game page shows on the VR menu panel now |
+| `game/addons/menu/Code/Settings/SettingsCatalog.cs` | `partial`, `AddVR()` in the constructor | VR settings page |
+| `game/addons/menu/Code/MenuUI/Components/PackageList.razor`, `New/HorizontalGameList.razor`, `Front/RecentlyPlayed.razor` | `VRPackageFilter.Apply` around the query | Only VR games listed in VR |
+| `game/addons/menu/Code/MenuUI/Components/MenuPanel.razor`, `PackageHoverCard.razor`, `CardVideoRotation.cs`, `Modals/RewardsModal.razor` | Root panel rect instead of `Screen.Width/Height` | A world panel's pixels aren't the window's |
 | `game/addons/menu/Code/ModalSystem.cs` | One-line `GetModalParent()` delegating to `VRUIHost`; `Push` and `PauseMenu` call it | The flat overlay isn't drawn in the headset |
 | `game/addons/menu/Code/Overlay/MenuOverlay.cs` | `VROverlayRelay.Tick( this )` at the end of `Tick` | Move the overlay's content where the headset sees it |
 | `engine/Sandbox.Engine/Platform/VR/VRSystem.Input.cs` | `menu` action string and `ButtonMenu` enum value | Read the menu button declared in the fpxr manifests |
@@ -120,3 +132,25 @@ formatting are checked. The items below still need testing in a headset (`sbox.e
   - [ ] the avatar editor round trip and quitting a game don't lose toasts (they're remade on the overlay and moved again);
   - [ ] the party deck stays where it is (not relayed yet);
   - [ ] flat screen, without `-vr`: toasts, chat and loading screen unchanged.
+- [ ] Milestone C, main menu finished:
+  - [ ] the left hand points in the VR menu too: its laser starts at the controller and isn't mirrored the wrong way (`VRMenuRig` mirrors the right hand's offsets);
+  - [ ] the grip opens context menus (package cards, friends, chat), and the trigger still clicks;
+  - [ ] the stick scrolls at a comfortable speed, in the right direction, with no drift at rest;
+  - [ ] context menus, hover cards and the rewards popup stay on the VR panel instead of being clamped to the desktop window size;
+  - [ ] clicking a game opens its page instead of launching it straight away;
+  - [ ] the hub, group pages, search, recently played and game pickers only list VR games;
+  - [ ] Settings shows a VR page and no Display page; each VR setting takes effect and survives a restart (`vr_ui_*` convars);
+  - [ ] the pointer hand setting turns the menu's lasers on and off per hand, and picks the in-game hand;
+  - [ ] opening a link, a Steam page or a folder shows the "Opened on your desktop" toast;
+  - [ ] flat screen, without `-vr`: no VR page, Display page there, lists unfiltered, game cards open as before.
+
+## Open work
+
+- **Tooltips on world panels.** `TooltipSystem` is fed by the screen `InputRouter` and only shows while the desktop
+  cursor is visible. Feeding it from `WorldPanelInput` needs a block in `UISystem.TickInput` that competes with
+  that routing; left until it can be tried in a headset.
+- **Back to the menu without the flat hop.** Scenes that return to `menu-main.scene` go through it before
+  `VRSceneSwitcher` loads `menu-vr.scene`.
+- **VR styling.** No `.is-vr` rules yet (bigger targets and text); better tuned with a headset on.
+- **Party deck** isn't relayed to the VR panels.
+- **Game input while a VR menu is open.** Games reading `Input.VR` directly still get the trigger.

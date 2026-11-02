@@ -29,7 +29,7 @@ public class SettingsCategory
 /// Every setting, as data. One per open settings view; holds the staged edits, so nothing is
 /// written until you save.
 /// </summary>
-public class SettingsCatalog
+public partial class SettingsCatalog // FORK-VR: partial for the VR page
 {
 	public List<SettingsCategory> Categories { get; } = new();
 	public List<SettingItem> Items { get; } = new();
@@ -46,6 +46,7 @@ public class SettingsCatalog
 		AddControls();
 		AddGame();
 		AddDeveloper();
+		AddVR(); // FORK-VR
 
 		foreach ( var item in Items )
 			byId[item.Id] = item;
