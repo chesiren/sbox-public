@@ -83,8 +83,9 @@
     public override void OnLayout(ref Rect layoutRect)
     {
         var padding = 10;
-        var h = Screen.Height - padding;
-        var w = Screen.Width - padding;
+        var screen = FindRootPanel()?.Box.Rect ?? new Rect( 0, 0, Screen.Width, Screen.Height ); // FORK-VR: a world panel's pixels aren't the window's
+        var h = screen.Bottom - padding;
+        var w = screen.Right - padding;
 
         if (layoutRect.Bottom > h)
         {

@@ -13,30 +13,15 @@ namespace Sandbox.VR;
 [Hide]
 public static class VRGamePanelHost
 {
-	/// <summary>
-	/// How far in front of the head the pause menu opens, in world units.
-	/// </summary>
-	public static float Distance { get; set; } = 60.0f;
-
-	/// <summary>
-	/// How wide the pause menu is, in world units.
-	/// </summary>
-	public static float Width { get; set; } = 64.0f;
+	static float Distance => VRPreferences.MenuDistance.Clamp( 20.0f, 200.0f );
+	static float Width => VRPreferences.MenuWidth.Clamp( 16.0f, 200.0f );
+	static float HudDistance => VRPreferences.HudDistance.Clamp( 20.0f, 200.0f );
+	static float HudWidth => VRPreferences.HudWidth.Clamp( 16.0f, 200.0f );
 
 	/// <summary>
 	/// How far below eye level the middle of the pause menu sits, in world units.
 	/// </summary>
 	public static float Drop { get; set; } = 6.0f;
-
-	/// <summary>
-	/// How far in front of the head the HUD (toasts, chat, subtitles, loading) floats, in world units.
-	/// </summary>
-	public static float HudDistance { get; set; } = 50.0f;
-
-	/// <summary>
-	/// How wide the HUD is, in world units.
-	/// </summary>
-	public static float HudWidth { get; set; } = 56.0f;
 
 	/// <summary>
 	/// How far below eye level the middle of the HUD sits, in world units.
@@ -163,7 +148,7 @@ public static class VRGamePanelHost
 			if ( _hud.IsShowing ) _roots.Add( _hud.Root );
 
 			if ( _roots.Count > 0 )
-				TickPointer( head );
+				TickPointer( head, delta );
 			else
 				HidePointer();
 
@@ -290,7 +275,7 @@ public static class VRGamePanelHost
 
 	static void FollowHead( Surface surface, Transform head, float delta )
 	{
-		if ( !surface.Root.IsValid() )
+		if ( !surface.Root.IsValid() || !VRPreferences.HudFollow )
 			return;
 
 		var target = Target( head, HudDistance, HudDrop, HudWidth );
@@ -309,13 +294,15 @@ public static class VRGamePanelHost
 			surface.Following = false;
 	}
 
-	static void TickPointer( Transform head )
+	static void TickPointer( Transform head, float delta )
 	{
 		if ( Input.VR is not { } vr )
 			return;
 
 		// Point with whichever hand last pulled its trigger
-		if ( vr.RightHand.Trigger.Value > PressThreshold ) _useLeftHand = false;
+		if ( !VRPreferences.CanPoint( leftHand: true ) ) _useLeftHand = false;
+		else if ( !VRPreferences.CanPoint( leftHand: false ) ) _useLeftHand = true;
+		else if ( vr.RightHand.Trigger.Value > PressThreshold ) _useLeftHand = false;
 		else if ( vr.LeftHand.Trigger.Value > PressThreshold ) _useLeftHand = true;
 
 		var hand = _useLeftHand ? vr.LeftHand : vr.RightHand;
@@ -325,7 +312,7 @@ public static class VRGamePanelHost
 		_input.Ray = ray;
 		_input.MouseLeftPressed = hand.Trigger.Value > PressThreshold;
 		_input.MouseRightPressed = hand.Grip.Value > PressThreshold;
-		_input.MouseWheel = hand.Joystick.Value;
+		_input.MouseWheel = VRStick.ToWheel( hand.Joystick.Value, delta );
 		_input.Tick( _roots, true );
 
 		var hovered = _input.Hovered;

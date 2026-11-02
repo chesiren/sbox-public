@@ -155,7 +155,7 @@
     {
         var query = Query;
 
-        var result = await Package.FindAsync(Query, Take, 0);
+        var result = await Package.FindAsync(SboxMenu.VRPackageFilter.Apply( Query ), Take, 0); // FORK-VR
 
         // Searched again, or been given a list instead, while this was coming
         if ( query != Query || Packages is not null )
@@ -179,7 +179,7 @@
 
         var query = Query;
 
-        var result = await Package.FindAsync( Query, Take, FoundPackages.Count() );
+        var result = await Package.FindAsync( SboxMenu.VRPackageFilter.Apply( Query ), Take, FoundPackages.Count() ); // FORK-VR
 
         if (query != Query || Packages is not null)
             return;

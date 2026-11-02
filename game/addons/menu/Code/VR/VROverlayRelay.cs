@@ -4,6 +4,7 @@ using MenuProject.Overlay;
 using MenuProject.Overlay.Overlays;
 using Sandbox;
 using Sandbox.UI;
+using Sandbox.VR;
 
 namespace SboxMenu;
 
@@ -18,11 +19,21 @@ public static class VROverlayRelay
 	static SubtitleOverlay _subtitles;
 	static ChatOverlay _chat;
 	static LoadingOverlay _loading;
+	static bool _listening;
 
 	public static void Tick( MenuOverlay overlay )
 	{
 		if ( !Application.IsVR )
 			return;
+
+		// Rides on the overlay's tick, which runs every frame in the menu's scope, to save more hooks upstream
+		VRMenuRig.Ensure();
+
+		if ( !_listening )
+		{
+			_listening = true;
+			VRDesktopLinks.OnOpened += _ => MenuOverlay.Show( "Opened on your desktop - take off the headset to see it", "open_in_new", 6f );
+		}
 
 		Restore( overlay );
 

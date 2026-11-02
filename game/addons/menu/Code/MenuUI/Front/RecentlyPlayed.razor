@@ -42,7 +42,7 @@
 
     async Task UpdateLobbies()
     {
-        var found = await Package.FindAsync( "type:game sort:used", 4, 0, default );
+        var found = await Package.FindAsync( SboxMenu.VRPackageFilter.Apply( "type:game sort:used" ), 4, 0, default ); // FORK-VR
 
         Packages.Clear();
         Packages.AddRange(found.Packages);

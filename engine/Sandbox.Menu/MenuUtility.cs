@@ -143,6 +143,8 @@ public static partial class MenuUtility
 			UseShellExecute = true,
 			Verb = "open"
 		} );
+
+		Sandbox.VR.VRDesktopLinks.Opened( path ); // FORK-VR: the headset doesn't show the desktop
 	}
 
 	/// <summary>
@@ -156,6 +158,8 @@ public static partial class MenuUtility
 			UseShellExecute = true,
 			Verb = "open"
 		} );
+
+		Sandbox.VR.VRDesktopLinks.Opened( path ); // FORK-VR: the headset doesn't show the desktop
 	}
 
 	static List<Friend> _friendList;

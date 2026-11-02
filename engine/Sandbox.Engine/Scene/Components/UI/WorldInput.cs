@@ -50,8 +50,8 @@ public sealed class WorldInput : Component
 		{
 			var hand = (VRHandSource == VRHand.HandSources.Left) ? Input.VR.LeftHand : Input.VR.RightHand;
 			WorldPanelInput.MouseLeftPressed = hand.Trigger.Value > 0.75f;
-			WorldPanelInput.MouseRightPressed = false;
-			WorldPanelInput.MouseWheel = hand.Joystick.Value;
+			WorldPanelInput.MouseRightPressed = hand.Grip.Value > 0.75f;
+			WorldPanelInput.MouseWheel = VRStick.ToWheel( hand.Joystick.Value, Time.Delta );
 			return;
 		}
 		// FORK-VR end

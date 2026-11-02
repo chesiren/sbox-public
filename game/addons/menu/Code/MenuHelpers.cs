@@ -545,18 +545,11 @@ public static class MenuHelpers
 	}
 
 	/// <summary>
-	/// Opens a game's menu page, or launches it directly in VR.
+	/// Opens a game's menu page.
 	/// </summary>
 	public static void LaunchGame( string gameIdent )
 	{
-		// alex: in VR we don't show modals properly (this needs some thought as to how we're going to do it)
-		// so for the purposes of being able to play tech jam games, we'll just launch games directly
-		if ( Application.IsVR )
-		{
-			MenuUtility.OpenGame( gameIdent, true );
-			return;
-		}
-
+		// FORK-VR: no longer launched straight away in VR, the game page shows on the VR menu panel
 		Game.Overlay.ShowGameModal( gameIdent );
 	}
 }

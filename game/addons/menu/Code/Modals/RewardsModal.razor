@@ -274,13 +274,14 @@
 		var scale = Parent.ScaleFromScreen;
 
 		// Only when something's moved - setting a style restarts its transitions
-		var placed = HashCode.Combine( anchor, gap, scale, Screen.Height );
+		var bottom = Parent.FindRootPanel()?.Box.Rect.Bottom ?? Screen.Height; // FORK-VR: a world panel's pixels aren't the window's
+		var placed = HashCode.Combine( anchor, gap, scale, bottom ); // FORK-VR
 		if ( placed == _placedFor ) return;
 		_placedFor = placed;
 
 		Inner.Style.Position = PositionMode.Absolute;
 		Inner.Style.Left = (anchor.Right + gap) * scale;
-		Inner.Style.Bottom = (Screen.Height - anchor.Bottom) * scale;
+		Inner.Style.Bottom = (bottom - anchor.Bottom) * scale; // FORK-VR
 		Inner.Style.Dirty();
 	}
 

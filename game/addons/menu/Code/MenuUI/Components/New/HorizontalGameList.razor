@@ -42,7 +42,7 @@
 
     async Task UpdateList()
     {
-        Result = await Package.FindAsync(Query, Limit);
+        Result = await Package.FindAsync(SboxMenu.VRPackageFilter.Apply( Query ), Limit); // FORK-VR
 
         StateHasChanged();
     }

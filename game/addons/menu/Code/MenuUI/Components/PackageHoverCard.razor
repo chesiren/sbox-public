@@ -564,7 +564,7 @@
     Rect Bounds()
     {
         var bounds = Source.Ancestors.FirstOrDefault( x => x.ComputedStyle?.Overflow is not (null or OverflowMode.Visible) )
-            ?.Box.ClipRect ?? new Rect( 0, 0, Screen.Width, Screen.Height );
+            ?.Box.ClipRect ?? Source.FindRootPanel()?.Box.Rect ?? new Rect( 0, 0, Screen.Width, Screen.Height ); // FORK-VR: a world panel's pixels aren't the window's
 
         // Keep clear of the party deck in the bottom right, if we'd run into it
         if ( PartyDeck.Current?.Window is { Box.Rect: var dock } && dock.Left < Source.Box.Rect.Right && dock.Right > Source.Box.Rect.Left )

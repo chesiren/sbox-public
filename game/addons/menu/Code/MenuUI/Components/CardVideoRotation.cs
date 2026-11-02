@@ -265,7 +265,8 @@ public sealed class CardVideoRotation
 		if ( rect.Width <= 0 || rect.Height <= 0 )
 			return false;
 
-		return Overlap( rect.Left, rect.Right, 0, Screen.Width ) &&
-			   Overlap( rect.Top, rect.Bottom, 0, Screen.Height );
+		var screen = card.FindRootPanel()?.Box.Rect ?? new Rect( 0, 0, Screen.Width, Screen.Height ); // FORK-VR: a world panel's pixels aren't the window's
+		return Overlap( rect.Left, rect.Right, screen.Left, screen.Right ) &&
+			   Overlap( rect.Top, rect.Bottom, screen.Top, screen.Bottom );
 	}
 }
