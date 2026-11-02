@@ -18,7 +18,7 @@ public sealed partial class AvatarEditManager
 		//renderer.WorldRotation = new Angles( 0, Yaw, 0 );
 
 		// cursor position
-		var ray = Scene.Camera.ScreenPixelToRay( Mouse.Position );
+		var ray = SboxMenu.VRFlatScene.PointerRay( Scene ) ?? Scene.Camera.ScreenPixelToRay( Mouse.Position ); // FORK-VR
 
 
 		var eyePos = headTransform.Position;
@@ -49,6 +49,8 @@ public sealed partial class AvatarEditManager
 
 	void UpdateCamera( SkinnedModelRenderer renderer )
 	{
+		if ( SboxMenu.VRFlatScene.IsActive( Scene ) ) return; // FORK-VR: the headset moves the camera
+
 		bool rotating = false;
 
 		if ( Input.Down( "attack1" ) )

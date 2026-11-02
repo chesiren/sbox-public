@@ -145,7 +145,7 @@ public sealed class RewardCard : Component
 		var camera = Scene.Camera;
 		if ( camera == null ) return;
 
-		var ray = camera.ScreenPixelToRay( Mouse.Position );
+		var ray = SboxMenu.VRFlatScene.PointerRay( Scene ) ?? camera.ScreenPixelToRay( Mouse.Position ); // FORK-VR
 
 		// Simple sphere check around the card
 		var toCard = WorldPosition - ray.Position;
@@ -178,7 +178,7 @@ public sealed class RewardCard : Component
 		if ( !_isHovered ) return;
 		if ( _launched ) return;
 
-		if ( Input.Pressed( "attack1" ) )
+		if ( Input.Pressed( "attack1" ) || SboxMenu.VRFlatScene.ClickPressed( Scene ) ) // FORK-VR
 		{
 			// Play click sound
 			Sound.Play( "ui.button.press" );

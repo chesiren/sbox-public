@@ -187,12 +187,12 @@ public sealed class RewardUnboxCrate : Component
 	protected override void OnUpdate()
 	{
 		// Handle click detection via raycasting from camera
-		if ( Input.Pressed( "attack1" ) )
+		if ( Input.Pressed( "attack1" ) || SboxMenu.VRFlatScene.ClickPressed( Scene ) ) // FORK-VR
 		{
 			var camera = Scene.Camera;
 			if ( camera == null ) return;
 
-			var ray = camera.ScreenPixelToRay( Mouse.Position );
+			var ray = SboxMenu.VRFlatScene.PointerRay( Scene ) ?? camera.ScreenPixelToRay( Mouse.Position ); // FORK-VR
 			var tr = Scene.Trace.Ray( ray, 5000f )
 				.WithTag( "crate" )
 				.Run();
