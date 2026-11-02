@@ -65,4 +65,52 @@ public class VRPanelPlacementTest
 
 		Assert.AreEqual( 64f, 3840 * scale * Sandbox.UI.WorldPanel.ScreenToWorldScale, 0.001f );
 	}
+
+	/// <summary>
+	/// Small head movements stay inside the dead zone; turning past the angle or stepping past the distance starts a follow.
+	/// </summary>
+	[TestMethod]
+	public void ShouldFollowPastDeadZone()
+	{
+		var placed = new Transform( new Vector3( 50, 0, 60 ) );
+
+		var nudge = new Transform( new Vector3( 52, 0, 60 ), new Angles( 0, 10, 0 ).ToRotation() );
+		var turn = new Transform( new Vector3( 50, 0, 60 ), new Angles( 0, 40, 0 ).ToRotation() );
+		var step = new Transform( new Vector3( 70, 0, 60 ) );
+
+		Assert.IsFalse( VRPanelPlacement.ShouldFollow( placed, nudge, 25, 12 ) );
+		Assert.IsTrue( VRPanelPlacement.ShouldFollow( placed, turn, 25, 12 ) );
+		Assert.IsTrue( VRPanelPlacement.ShouldFollow( placed, step, 25, 12 ) );
+	}
+
+	/// <summary>
+	/// Approaching closes the same share of the gap for the same time, whether in one step or many.
+	/// </summary>
+	[TestMethod]
+	public void ApproachIsFrameRateIndependent()
+	{
+		var start = new Transform( Vector3.Zero );
+		var target = new Transform( new Vector3( 100, 0, 0 ) );
+
+		var once = VRPanelPlacement.Approach( start, target, 4, 0.5f );
+
+		var stepped = start;
+		for ( int i = 0; i < 10; i++ )
+			stepped = VRPanelPlacement.Approach( stepped, target, 4, 0.05f );
+
+		Assert.AreEqual( once.Position.x, stepped.Position.x, 0.01f );
+		Assert.IsTrue( once.Position.x > 0 && once.Position.x < 100 );
+	}
+
+	/// <summary>
+	/// A follow ends once the panel is all but on its target.
+	/// </summary>
+	[TestMethod]
+	public void HasArrivedWhenClose()
+	{
+		var target = new Transform( new Vector3( 100, 0, 0 ) );
+
+		Assert.IsTrue( VRPanelPlacement.HasArrived( new Transform( new Vector3( 99.8f, 0, 0 ) ), target ) );
+		Assert.IsFalse( VRPanelPlacement.HasArrived( new Transform( new Vector3( 95, 0, 0 ) ), target ) );
+	}
 }
