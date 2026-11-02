@@ -113,4 +113,26 @@ public class VRPanelPlacementTest
 		Assert.IsTrue( VRPanelPlacement.HasArrived( new Transform( new Vector3( 99.8f, 0, 0 ) ), target ) );
 		Assert.IsFalse( VRPanelPlacement.HasArrived( new Transform( new Vector3( 95, 0, 0 ) ), target ) );
 	}
+
+	/// <summary>
+	/// A follow holds still inside the dead zone, then once started keeps going until the panel arrives, even back inside it.
+	/// </summary>
+	[TestMethod]
+	public void HeadFollowStartsPastDeadZoneAndFinishes()
+	{
+		var follow = new VRHeadFollow();
+		var placed = new Transform( Vector3.Zero );
+
+		var still = follow.Tick( placed, new Transform( new Vector3( 5, 0, 0 ) ), 0.1f );
+		Assert.AreEqual( 0f, still.Position.x, 0.001f );
+
+		var target = new Transform( new Vector3( 40, 0, 0 ) );
+		var current = follow.Tick( placed, target, 0.1f );
+		Assert.IsTrue( current.Position.x > 0 );
+
+		for ( int i = 0; i < 200; i++ )
+			current = follow.Tick( current, target, 0.1f );
+
+		Assert.AreEqual( 40f, current.Position.x, 0.5f );
+	}
 }

@@ -58,7 +58,7 @@ Every commit that adds or removes a hook updates the registry below.
 | `game/addons/menu/Code/VR/VROverlayRelay.cs` | Moves toasts, chat, subtitles, mic, loading screen and stray modals off the flat overlay in VR, and remakes them when their host goes |
 | `engine/Sandbox.Menu/VR/VRGamePanelHost.cs` | World panels in the game's scene for the menu's UI in VR: a world-locked pause menu and a head-following HUD, with pointer, laser, cursor and haptics; menu button edge |
 | `engine/Sandbox.Engine/Systems/Input/VR/VRController.Menu.cs` | `VRController.ButtonMenu` |
-| `engine/Sandbox.Engine/Systems/Input/VR/VRPanelPlacement.cs` | Pure placement math for VR panels |
+| `engine/Sandbox.Engine/Systems/Input/VR/VRPanelPlacement.cs` | Pure placement math for VR panels, and `VRHeadFollow` (dead zone then smooth catch-up) |
 | `engine/Tests/Sandbox.Test.Unit/VR/VRPanelPlacementTest.cs` | Unit tests for `VRPanelPlacement` |
 | `engine/Sandbox.Engine/Systems/Input/VR/VRStick.cs` | Stick to scroll wheel, with dead zone and curve |
 | `engine/Tests/Sandbox.Test.Unit/VR/VRStickTest.cs` | Unit tests for `VRStick` and `VRPreferences.CanPoint` |
@@ -67,6 +67,8 @@ Every commit that adds or removes a hook updates the registry below.
 | `game/addons/menu/Code/VR/VRMenuRig.cs` | Mirrors the VR menu scene's right-hand pointers onto the left hand at runtime; applies the pointer hand setting |
 | `game/addons/menu/Code/VR/VRPackageFilter.cs` | Adds `+vr` to game queries in VR |
 | `game/addons/menu/Code/VR/SettingsCatalog.VR.cs` | The VR settings page; hides the display page in VR |
+| `engine/Sandbox.Menu/VR/VRKeyboard.cs` | On-screen keyboard for the menu's text fields on world panels |
+| `engine/Sandbox.Engine/Scene/Components/UI/ScreenPanel.VR.cs` | In VR, a screen panel is drawn on a head-following world panel; `ShowInVR` opts out |
 
 The menu addon has no access to engine internals (such as `WorldPanelInput`), but `Sandbox.Menu`
 does and the addon references it. Engine-side VR UI code for the menu therefore goes in
@@ -81,6 +83,8 @@ The `game/addons/menu/Code/VR/` folder also holds upstream files, such as
 |---|---|---|
 | `CLAUDE.md` | `@FORK-VR.md` | Load these conventions in every session |
 | `engine/Sandbox.Engine/Scene/Components/UI/WorldInput.cs` | `Game.IsRunningInVR` block moved before the mouse block; grip right-clicks; stick through `VRStick` | The desktop cursor must not steal the ray; context menus and usable scrolling in VR |
+| `engine/Sandbox.Engine/Scene/Components/UI/ScreenPanel.cs` | `partial`; one-line calls to `ScreenPanel.VR.cs` in `OnAwake`, `OnEnabled`, `OnDisabled`, `OnDestroy`, `GetPanel`, `OnUpdate` | Game HUDs reach the headset |
+| `engine/Sandbox.Engine/Systems/UI/UISystem.cs` | `TickWorldInput` also collects screen panels drawn on world panels | World inputs can click game HUDs in VR |
 | `engine/Sandbox.Menu/MenuUtility.cs` | `VRDesktopLinks.Opened( path )` in `OpenUrl` and `OpenFolder` | Tell the player a link opened where the headset doesn't show |
 | `game/addons/menu/Code/MenuHelpers.cs` | `LaunchGame` VR shortcut removed | The game page shows on the VR menu panel now |
 | `game/addons/menu/Code/Settings/SettingsCatalog.cs` | `partial`, `AddVR()` in the constructor | VR settings page |
@@ -144,7 +148,22 @@ formatting are checked. The items below still need testing in a headset (`sbox.e
   - [ ] opening a link, a Steam page or a folder shows the "Opened on your desktop" toast;
   - [ ] flat screen, without `-vr`: no VR page, Display page there, lists unfiltered, game cards open as before.
 
+- [ ] Milestone D, typing and game HUDs:
+  - [ ] focusing a text field on the VR menu panel or an in-game panel opens the keyboard, above the field when it's low on the panel;
+  - [ ] keys type into the field without taking its focus; shift is one-shot; backspace, space and enter work; enter submits search and chat;
+  - [ ] the close key and clicking elsewhere close the keyboard;
+  - [ ] the server password, report and review fields can be filled in;
+  - [ ] a game whose HUD is a `ScreenPanel` shows it ahead of the player, following the head lazily, readable and behind the menu's HUD;
+  - [ ] a game `WorldInput` can click buttons on that HUD;
+  - [ ] a `ScreenPanel` with `ShowInVR` off stays on the desktop window only;
+  - [ ] the menu's own screen panel in `menu-main.scene` doesn't flash in the headset before the VR menu scene loads;
+  - [ ] flat screen, without `-vr`: no keyboard, screen panels unchanged.
+
 ## Open work
+
+- **Key binding capture in VR.** `KeyBind.razor` captures keyboard and gamepad buttons only; VR controller
+  buttons can't be bound from the settings page.
+- **The game's own text fields.** The keyboard follows the menu's focus only, not text fields in a game's UI.
 
 - **Tooltips on world panels.** `TooltipSystem` is fed by the screen `InputRouter` and only shows while the desktop
   cursor is visible. Feeding it from `WorldPanelInput` needs a block in `UISystem.TickInput` that competes with
