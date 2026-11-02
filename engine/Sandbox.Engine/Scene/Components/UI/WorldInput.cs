@@ -43,6 +43,7 @@ public sealed class WorldInput : Component
 		WorldPanelInput.MouseRightPressed = Input.Down( RightMouseAction );
 		WorldPanelInput.MouseWheel = Input.MouseWheel;
 
+		// FORK-VR begin: VR checked before the mouse so the desktop cursor can't steal the ray
 		// If we're in VR, we point with this gameobject even if the mouse is active - the cursor
 		// is on the desktop, not in the headset. Triggers are mouse presses, joystick scrolls
 		if ( Game.IsRunningInVR )
@@ -53,6 +54,7 @@ public sealed class WorldInput : Component
 			WorldPanelInput.MouseWheel = hand.Joystick.Value;
 			return;
 		}
+		// FORK-VR end
 
 		// If the mouse is active, we want to use the mouse cursor ray instead, and use MOUSE1/2 as backup also
 		if ( Mouse.Active && Scene?.Camera is not null )

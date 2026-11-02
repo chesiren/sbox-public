@@ -1,3 +1,4 @@
+// FORK-VR: file added by the fork, absent from upstream
 using Sandbox;
 using Sandbox.UI;
 
