@@ -150,6 +150,7 @@ public partial class RootPanel : Panel
 	/// </summary>
 	protected virtual void UpdateBounds( Rect rect )
 	{
+		if ( UpdateProjectedBounds() ) return; // FORK-VR: projected in VR, laid out at its own size
 		PanelBounds = rect;
 
 		if ( IsVR && IsHighQualityVR )
@@ -165,6 +166,7 @@ public partial class RootPanel : Panel
 	/// </summary>
 	protected virtual void UpdateScale( Rect screenSize )
 	{
+		if ( UpdateProjectedScale() ) return; // FORK-VR
 		Scale = screenSize.Height / 1080.0f;
 
 		if ( Game.IsRunningOnHandheld )

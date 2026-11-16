@@ -34,8 +34,8 @@ public partial class SettingsCatalog
 
 		AddVRSlider( "vr.scroll_speed", "Pointing", "Scroll speed", "How fast the stick scrolls, pushed all the way.", "vr_ui_scroll_speed", 2, 40, 1 );
 
-		AddVRSlider( "vr.menu_distance", "Pause menu", "Distance", "How far in front of you the pause menu opens.", "vr_ui_distance", 30, 120, 1 );
-		AddVRSlider( "vr.menu_width", "Pause menu", "Size", "How wide the pause menu is.", "vr_ui_width", 32, 128, 1 );
+		AddVRSlider( "vr.menu_distance", "Menu", "Distance", "How far in front of you the menu opens.", "vr_ui_distance", 30, 120, 1 );
+		AddVRSlider( "vr.menu_width", "Menu", "Size", "How wide the menu is.", "vr_ui_width", 32, 128, 1 );
 
 		Items.Add( new SettingItem
 		{
@@ -43,7 +43,7 @@ public partial class SettingsCatalog
 			Category = "vr",
 			Section = "Notifications",
 			Title = "Follow your head",
-			Description = "Notifications, chat and subtitles catch up when you turn away. Off, they stay where they first showed.",
+			Description = "Notifications, chat and subtitles catch up when you turn away, while nothing on them can be clicked. Off, they stay where they first showed.",
 			Options = OffOn,
 			Read = () => VRPreferences.HudFollow,
 			Write = value => ConsoleSystem.SetValue( "vr_ui_hud_follow", ToBool( value ) )
@@ -58,11 +58,10 @@ public partial class SettingsCatalog
 			Category = "vr",
 			Section = "Notifications",
 			Title = "Recenter",
-			Description = "Brings the pause menu and notifications back in front of you.",
+			Description = "Brings the menu and notifications back in front of you. Holding the menu button does it too.",
 			Kind = SettingKind.Action,
 			ActionLabel = "Recenter",
-			IsVisible = () => Sandbox.Game.InGame,
-			Invoke = VRGamePanelHost.Recenter
+			Invoke = VRMenuHost.Recenter
 		} );
 	}
 

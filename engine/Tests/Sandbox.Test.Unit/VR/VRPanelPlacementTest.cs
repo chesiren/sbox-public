@@ -137,20 +137,21 @@ public class VRPanelPlacementTest
 	}
 
 	/// <summary>
-	/// The anchor puts the tracked head where the view was and turns the play area so the head looks the view's way.
+	/// Each layer sits further along the panel's forward, away from the viewer, and keeps the panel's facing and scale.
 	/// </summary>
 	[TestMethod]
-	public void AnchorForPutsHeadAtView()
+	public void LayerPushesAwayFromViewer()
 	{
-		var head = new Transform( new Vector3( 10, 5, 64 ), new Angles( 20, 30, 0 ).ToRotation() );
-		var view = new Transform( new Vector3( 200, -50, 40 ), new Angles( 0, 90, 0 ).ToRotation() );
+		var placement = new Transform( new Vector3( 50, 0, 60 ), new Angles( 0, 90, 0 ).ToRotation(), 0.5f );
 
-		var anchor = VRPanelPlacement.AnchorFor( head, view );
-		var world = anchor.ToWorld( head );
+		var first = VRPanelPlacement.Layer( placement, 0, 0.25f );
+		var third = VRPanelPlacement.Layer( placement, 2, 0.25f );
 
-		Assert.AreEqual( 200f, world.Position.x, 0.01f );
-		Assert.AreEqual( -50f, world.Position.y, 0.01f );
-		Assert.AreEqual( 40f, world.Position.z, 0.01f );
-		Assert.AreEqual( 90f, world.Rotation.Yaw(), 0.1f );
+		Assert.AreEqual( placement.Position, first.Position );
+		Assert.AreEqual( 50f, third.Position.x, 0.01f );
+		Assert.AreEqual( 0.5f, third.Position.y, 0.01f );
+		Assert.AreEqual( 60f, third.Position.z, 0.01f );
+		Assert.AreEqual( 90f, third.Rotation.Yaw(), 0.1f );
+		Assert.AreEqual( 0.5f, third.UniformScale, 0.001f );
 	}
 }

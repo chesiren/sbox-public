@@ -7,15 +7,15 @@ namespace Sandbox.VR;
 public static class VRPreferences
 {
 	/// <summary>
-	/// How far in front of the head the pause menu opens, in world units.
+	/// How far in front of the head the menu opens, in world units.
 	/// </summary>
-	[ConVar( "vr_ui_distance", ConVarFlags.Saved | ConVarFlags.Protected, Help = "How far in front of the head the VR pause menu opens" )]
+	[ConVar( "vr_ui_distance", ConVarFlags.Saved | ConVarFlags.Protected, Help = "How far in front of the head the VR menu opens" )]
 	public static float MenuDistance { get; set; } = 60.0f;
 
 	/// <summary>
-	/// How wide the pause menu is, in world units.
+	/// How wide the menu is, in world units.
 	/// </summary>
-	[ConVar( "vr_ui_width", ConVarFlags.Saved | ConVarFlags.Protected, Help = "How wide the VR pause menu is" )]
+	[ConVar( "vr_ui_width", ConVarFlags.Saved | ConVarFlags.Protected, Help = "How wide the VR menu is" )]
 	public static float MenuWidth { get; set; } = 64.0f;
 
 	/// <summary>
@@ -31,7 +31,7 @@ public static class VRPreferences
 	public static float HudWidth { get; set; } = 56.0f;
 
 	/// <summary>
-	/// Whether the HUD follows the head. Off, it stays where it first showed until the panels are recentered.
+	/// Whether the HUD follows the head. Off, it stays where it first showed until the menu is recentered.
 	/// </summary>
 	[ConVar( "vr_ui_hud_follow", ConVarFlags.Saved | ConVarFlags.Protected, Help = "Whether the VR HUD follows the head" )]
 	public static bool HudFollow { get; set; } = true;

@@ -18,7 +18,7 @@ public partial class RootPanel
 			PanelCommandList.Reset();
 			BeginRenderStatistics( PanelCommandList );
 			using var painter = Painter.Begin( PanelCommandList, PanelBounds );
-			painter.SetViewport( PanelBounds, this is WorldPanel world ? ScenePanelObject.BuildPanelToWorldMatrix( world.Transform ) : null );
+			painter.SetViewport( PanelBounds, this is WorldPanel world ? ScenePanelObject.BuildPanelToWorldMatrix( world.Transform ) : ProjectedViewport() ); // FORK-VR: projected roots draw in the world too
 			using var destination = painter.WithDestination( PanelBounds, ScaleToScreen, opacity, BlendMode.Normal, Matrix.Identity );
 			var counters = new FrameStats();
 			Render( destination.Painter, ref counters );

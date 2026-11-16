@@ -29,15 +29,12 @@ internal static class VRPanelPlacement
 	}
 
 	/// <summary>
-	/// The play area anchor that puts a head at <paramref name="headInPlayArea"/> (relative to the anchor) at <paramref name="view"/>'s
-	/// position, looking its way. Only the yaw is matched: the player's own height and tilt stay theirs.
+	/// <paramref name="placement"/> pushed <paramref name="index"/> times <paramref name="spacing"/> further from the viewer,
+	/// so panels stacked on one plane keep their order: the first is nearest.
 	/// </summary>
-	public static Transform AnchorFor( Transform headInPlayArea, Transform view )
+	public static Transform Layer( Transform placement, int index, float spacing )
 	{
-		var rotation = new Angles( 0, view.Rotation.Yaw() - headInPlayArea.Rotation.Yaw(), 0 ).ToRotation();
-		var position = view.Position - rotation * headInPlayArea.Position;
-
-		return new Transform( position, rotation );
+		return placement.WithPosition( placement.Position + placement.Rotation.Forward * (index * spacing) );
 	}
 
 	/// <summary>
