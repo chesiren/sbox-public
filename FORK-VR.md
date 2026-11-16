@@ -71,6 +71,8 @@ Every commit that adds or removes a hook updates the registry below.
 | `game/addons/menu/Code/VR/SettingsCatalog.VR.cs` | The VR settings page; hides the display page in VR |
 | `engine/Sandbox.Menu/VR/VRKeyboard.cs` | On-screen keyboard for the menu's text fields on projected roots |
 | `engine/Sandbox.Engine/Scene/Components/UI/ScreenPanel.VR.cs` | In VR, a screen panel is drawn on a head-following world panel; `ShowInVR` opts out |
+| `engine/Sandbox.Engine/Platform/VR/VRGameFilter.cs` | In VR, keeps only Workshop games whose published `ControlModes` support VR |
+| `engine/Tests/Sandbox.Test.Unit/VR/VRGameFilterTest.cs` | Unit tests for `VRGameFilter` |
 
 The menu addon has no access to engine internals (such as `WorldPanelInput`), but `Sandbox.Menu`
 does and the addon references it. Engine-side VR UI code for the menu therefore goes in
@@ -91,6 +93,8 @@ root panels (`PlatformRoot`, `MenuOverlay`, `LoadingRoot`, ...). The fork doesn'
 | `engine/Sandbox.Engine/Systems/UI/UISystem.cs` | `TickWorldInput` also collects screen panels drawn on world panels | World inputs can click game HUDs in VR |
 | `engine/Sandbox.Engine/Systems/UI/RootPanel.cs` | One-line calls to `RootPanel.VR.cs` in `UpdateBounds` and `UpdateScale` | A projected root keeps its own size instead of the window's |
 | `engine/Sandbox.Engine/Systems/UI/RootPanel.Render.cs` | `ProjectedViewport()` in place of `null` in `BuildCommandList` | A projected root is painted in world space |
+| `engine/Sandbox.Menu/MenuUtility.Platform.cs` | `VRGameFilter.Keep` in `DetailsOfGamesAsync` | Only VR games in the menu's game lists in VR |
+| `engine/Sandbox.Menu/WorkshopGameSearch.cs` | `NextAsync` fetches up to 10 pages until one has a game left after the filter | A page filtered empty would stop a list that loads more as it's scrolled |
 | `engine/Sandbox.Menu/MenuUtility.cs` | `VRDesktopLinks.Opened( path )` in `OpenUrl` and `OpenFolder` | Tell the player a link opened where the headset doesn't show |
 | `engine/Sandbox.Menu/MenuDll.cs` | `VRMenuHost.Tick()` in `Tick`; menu button ORed with Escape in `LateTick`; `VRMenuScene.Render` in `OnRender` | Drive the VR menu; pause from the controller; draw the headset's scene when no game has one |
 | `game/addons/menu/Code/MenuHelpers.cs` | `LaunchGame` VR shortcut removed | The game page shows in VR like on the desktop |
@@ -125,6 +129,11 @@ console for its errors first. The items below still need testing in a headset (`
   - [ ] the dev console (`DevLayer`) is projected too: note whether it's usable;
   - [ ] `PlatformRoot.WantsMouse` reads the desktop mouse over a game's own menu: check the game still gets the trigger while the dock isn't pointed at;
   - [ ] flat screen, without `-vr`: menu, overlay, loading screen and modals unchanged.
+- [ ] Only VR games in VR:
+  - [ ] browse, search, featured, "Your games" and favourites list only games that support VR;
+  - [ ] scrolling a search keeps loading more, and a search with no VR game ends without hanging;
+  - [ ] map pickers and the maps page are unfiltered;
+  - [ ] flat screen, without `-vr`: lists unchanged.
 - [ ] Settings and links:
   - [ ] Settings shows a VR page and no Display page; each VR setting takes effect and survives a restart (`vr_ui_*` convars);
   - [ ] the pointer hand setting picks which hands point;
@@ -141,10 +150,10 @@ console for its errors first. The items below still need testing in a headset (`
 
 ## Open work
 
-- **Only VR games listed in VR.** The platform menu lists games from Steam Workshop queries
-  (`MenuUtility.SearchWorkshopGames`, `WorkshopGameSearch`), which have no `+vr` term; the old
-  `VRPackageFilter` hooks went with the classic menu. Needs a filter on the Workshop item's
-  `ControlModes`, and the same for the multiplayer and server lists.
+- **Only VR games in the server lists.** `MultiplayerShelf` and `ServersPage` only know a lobby's game
+  ident, so filtering them needs each game's package or Workshop item fetched.
+- **Starting a flat game in VR.** Nothing stops it, and the game the menu is on stays shown even if
+  it isn't a VR game.
 - **A nicer VR scene.** `VRMenuScene` is a dark void with a light; a floor, a skybox and hand models
   would help, ideally from a prefab rather than code.
 - **Key binding capture in VR.** `KeyBind.razor` captures keyboard and gamepad buttons only; VR controller

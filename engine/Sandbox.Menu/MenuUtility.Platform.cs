@@ -177,6 +177,8 @@ public static partial class MenuUtility
 		var games = items.Where( x => x?.PackageIdent is not null ).DistinctBy( x => x.Id ).ToArray();
 
 		await RequestOwnerNamesAsync( games );
-		return games.Select( WorkshopItemDetails.From ).ToArray();
+		return games.Select( WorkshopItemDetails.From )
+			.Where( x => Sandbox.VR.VRGameFilter.Keep( Application.IsVR, x.Tags, x.GetMeta<ControlModeSettings>( "ControlModes", null ) ) ) // FORK-VR: only VR games in VR
+			.ToArray();
 	}
 }
