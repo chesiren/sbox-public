@@ -9,13 +9,46 @@ public class VRGameFilterTest
 	static readonly string[] GameTags = ["game", "Shooter"];
 
 	/// <summary>
-	/// On the desktop every game is listed, whatever it supports.
+	/// On the desktop every game is listed but those that are VR only.
 	/// </summary>
 	[TestMethod]
-	public void KeepsEverythingOutsideVR()
+	public void KeepsDesktopGamesOutsideVR()
 	{
 		Assert.IsTrue( VRGameFilter.Keep( false, GameTags, new ControlModeSettings { Keyboard = true } ) );
+		Assert.IsTrue( VRGameFilter.Keep( false, GameTags, new ControlModeSettings { VR = true, Gamepad = true } ) );
 		Assert.IsTrue( VRGameFilter.Keep( false, GameTags, null ) );
+		Assert.IsFalse( VRGameFilter.Keep( false, GameTags, new ControlModeSettings { VR = true } ) );
+	}
+
+	/// <summary>
+	/// A game that supports both plays on both; one that supports a single side only plays there.
+	/// </summary>
+	[TestMethod]
+	public void PlaysWhereItsControlsAre()
+	{
+		var both = new ControlModeSettings { VR = true, Keyboard = true };
+		var vrOnly = new ControlModeSettings { VR = true };
+		var flat = new ControlModeSettings { Keyboard = true };
+
+		Assert.IsTrue( VRGameFilter.CanPlay( true, both ) );
+		Assert.IsTrue( VRGameFilter.CanPlay( false, both ) );
+		Assert.IsTrue( VRGameFilter.CanPlay( true, vrOnly ) );
+		Assert.IsFalse( VRGameFilter.CanPlay( false, vrOnly ) );
+		Assert.IsFalse( VRGameFilter.CanPlay( true, flat ) );
+		Assert.IsTrue( VRGameFilter.CanPlay( false, flat ) );
+
+		Assert.IsNull( VRGameFilter.WhyCantPlay( true, both ) );
+		Assert.IsNotNull( VRGameFilter.WhyCantPlay( true, flat ) );
+		Assert.IsNotNull( VRGameFilter.WhyCantPlay( false, vrOnly ) );
+	}
+
+	/// <summary>
+	/// Maps are kept on the desktop too.
+	/// </summary>
+	[TestMethod]
+	public void KeepsMapsOutsideVR()
+	{
+		Assert.IsTrue( VRGameFilter.Keep( false, ["map"], new ControlModeSettings { VR = true } ) );
 	}
 
 	/// <summary>

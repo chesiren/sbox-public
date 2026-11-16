@@ -80,7 +80,7 @@ public static class MenuHelpers
 		}
 
 		// VR-only game but not in VR
-		if ( package.Info.IsVrOnly && !Application.IsVR )
+		if ( Sandbox.VR.VRGames.WhyCantPlay( package ) is not null ) // FORK-VR: nor a flat game in VR
 			return;
 
 		var party = PartyRoom.Current;

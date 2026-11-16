@@ -178,7 +178,7 @@ public static partial class MenuUtility
 
 		await RequestOwnerNamesAsync( games );
 		return games.Select( WorkshopItemDetails.From )
-			.Where( x => Sandbox.VR.VRGameFilter.Keep( Application.IsVR, x.Tags, x.GetMeta<ControlModeSettings>( "ControlModes", null ) ) ) // FORK-VR: only VR games in VR
+			.Where( x => Sandbox.VR.VRGameFilter.Keep( Application.IsVR, x.Tags, x.GetMeta<ControlModeSettings>( "ControlModes", null ) ) ) // FORK-VR: only games playable in VR, or on the desktop
 			.ToArray();
 	}
 }

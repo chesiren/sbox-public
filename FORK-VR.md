@@ -71,7 +71,8 @@ Every commit that adds or removes a hook updates the registry below.
 | `game/addons/menu/Code/VR/SettingsCatalog.VR.cs` | The VR settings page; hides the display page in VR |
 | `engine/Sandbox.Menu/VR/VRKeyboard.cs` | On-screen keyboard for the menu's text fields on projected roots |
 | `engine/Sandbox.Engine/Scene/Components/UI/ScreenPanel.VR.cs` | In VR, a screen panel is drawn on a head-following world panel; `ShowInVR` opts out |
-| `engine/Sandbox.Engine/Platform/VR/VRGameFilter.cs` | In VR, keeps only Workshop games whose published `ControlModes` support VR |
+| `engine/Sandbox.Engine/Platform/VR/VRGameFilter.cs` | Which games play and are listed by their published `ControlModes`: VR games in VR, no VR-only game on the desktop, games supporting both everywhere |
+| `engine/Sandbox.Menu/VR/VRGames.cs` | The menu addon's API for it: Sandbox VR as the default game in VR, a last-game cookie per side, why a game can't be played |
 | `engine/Tests/Sandbox.Test.Unit/VR/VRGameFilterTest.cs` | Unit tests for `VRGameFilter` |
 
 The menu addon has no access to engine internals (such as `WorldPanelInput`), but `Sandbox.Menu`
@@ -93,11 +94,13 @@ root panels (`PlatformRoot`, `MenuOverlay`, `LoadingRoot`, ...). The fork doesn'
 | `engine/Sandbox.Engine/Systems/UI/UISystem.cs` | `TickWorldInput` also collects screen panels drawn on world panels | World inputs can click game HUDs in VR |
 | `engine/Sandbox.Engine/Systems/UI/RootPanel.cs` | One-line calls to `RootPanel.VR.cs` in `UpdateBounds` and `UpdateScale` | A projected root keeps its own size instead of the window's |
 | `engine/Sandbox.Engine/Systems/UI/RootPanel.Render.cs` | `ProjectedViewport()` in place of `null` in `BuildCommandList` | A projected root is painted in world space |
-| `engine/Sandbox.Menu/MenuUtility.Platform.cs` | `VRGameFilter.Keep` in `DetailsOfGamesAsync` | Only VR games in the menu's game lists in VR |
+| `engine/Sandbox.Menu/MenuUtility.Platform.cs` | `VRGameFilter.Keep` in `DetailsOfGamesAsync` | Only games playable here in the menu's game lists |
 | `engine/Sandbox.Menu/WorkshopGameSearch.cs` | `NextAsync` fetches up to 10 pages until one has a game left after the filter | A page filtered empty would stop a list that loads more as it's scrolled |
 | `engine/Sandbox.Menu/MenuUtility.cs` | `VRDesktopLinks.Opened( path )` in `OpenUrl` and `OpenFolder` | Tell the player a link opened where the headset doesn't show |
 | `engine/Sandbox.Menu/MenuDll.cs` | `VRMenuHost.Tick()` in `Tick`; menu button ORed with Escape in `LateTick`; `VRMenuScene.Render` in `OnRender` | Drive the VR menu; pause from the controller; draw the headset's scene when no game has one |
-| `game/addons/menu/Code/MenuHelpers.cs` | `LaunchGame` VR shortcut removed | The game page shows in VR like on the desktop |
+| `engine/Sandbox.GameInstance/GameInstanceDll.cs` | `VRGameFilter.ThrowIfCantPlay` in `DoLoadGamePackageAsync` | Every way into a game is refused if it can't be played here |
+| `game/addons/menu/Code/MenuHelpers.cs` | `LaunchGame` VR shortcut removed; `VRGames.WhyCantPlay` in place of `IsVrOnly` in `PlayGame` | The game page shows in VR like on the desktop; no flat game played in VR |
+| `game/addons/menu/Code/Platform/PlatformMenu.cs` | `VRGames.WhyCantPlay` in both `WhyCantStart` and before opening a game's own menu; `SandboxWorkshopId` and `GameCookie` through `VRGames` | Play greyed out with the reason; Sandbox VR by default in VR; each side remembers its own last game |
 | `game/addons/menu/Code/Settings/SettingsCatalog.cs` | `partial`, `AddVR()` in the constructor | VR settings page |
 | `game/addons/menu/Code/MenuUI/Components/MenuPanel.razor` | Root panel rect instead of `Screen.Width/Height` | A projected root's pixels aren't the window's |
 | `engine/Sandbox.Engine/Platform/VR/VRSystem.Input.cs` | `menu` action string and `ButtonMenu` enum value | Read the menu button declared in the fpxr manifests |
@@ -129,11 +132,15 @@ console for its errors first. The items below still need testing in a headset (`
   - [ ] the dev console (`DevLayer`) is projected too: note whether it's usable;
   - [ ] `PlatformRoot.WantsMouse` reads the desktop mouse over a game's own menu: check the game still gets the trigger while the dock isn't pointed at;
   - [ ] flat screen, without `-vr`: menu, overlay, loading screen and modals unchanged.
-- [ ] Only VR games in VR:
-  - [ ] browse, search, featured, "Your games" and favourites list only games that support VR;
-  - [ ] scrolling a search keeps loading more, and a search with no VR game ends without hanging;
+- [ ] Games by control mode:
+  - [ ] the first start in VR opens on Sandbox VR; after picking a VR game, the next VR start opens on it, and a flat start still opens on the last flat game;
+  - [ ] in VR, browse, search, featured, "Your games" and favourites list only games that support VR;
+  - [ ] flat screen, without `-vr`: VR-only games are not listed, games supporting both are;
+  - [ ] scrolling a search keeps loading more, and a search with no playable game ends without hanging;
   - [ ] map pickers and the maps page are unfiltered;
-  - [ ] flat screen, without `-vr`: lists unchanged.
+  - [ ] in VR, a flat game given with `-rungame` shows its page with Play greyed out and "This game can't be played in VR", and its own menu scene isn't loaded;
+  - [ ] joining a flat game's server in VR, or a VR-only game's server on the desktop, ends on a loading error with the reason;
+  - [ ] a game supporting both plays in VR and on the desktop.
 - [ ] Settings and links:
   - [ ] Settings shows a VR page and no Display page; each VR setting takes effect and survives a restart (`vr_ui_*` convars);
   - [ ] the pointer hand setting picks which hands point;
@@ -150,10 +157,9 @@ console for its errors first. The items below still need testing in a headset (`
 
 ## Open work
 
-- **Only VR games in the server lists.** `MultiplayerShelf` and `ServersPage` only know a lobby's game
-  ident, so filtering them needs each game's package or Workshop item fetched.
-- **Starting a flat game in VR.** Nothing stops it, and the game the menu is on stays shown even if
-  it isn't a VR game.
+- **Only playable games in the server lists.** `MultiplayerShelf` and `ServersPage` only know a lobby's game
+  ident, so filtering them needs each game's package or Workshop item fetched. Joining one that can't be
+  played here is refused at load, with a loading error.
 - **A nicer VR scene.** `VRMenuScene` is a dark void with a light; a floor, a skybox and hand models
   would help, ideally from a prefab rather than code.
 - **Key binding capture in VR.** `KeyBind.razor` captures keyboard and gamepad buttons only; VR controller

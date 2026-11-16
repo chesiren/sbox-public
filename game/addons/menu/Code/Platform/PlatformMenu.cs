@@ -44,7 +44,7 @@ public static class PlatformMenu
 		if ( CurrentId == 0 ) return WhyCantStart( Current );
 
 		if ( !MenuHelpers.HasAuthority ) return "Only the party leader can start a game";
-		if ( Details?.GetMeta<ControlModeSettings>( "ControlModes", null )?.IsVROnly == true && !Application.IsVR ) return "This game needs a VR headset";
+		if ( Sandbox.VR.VRGames.WhyCantPlay( Details ) is { } why ) return why; // FORK-VR: no flat game in VR either
 
 		return null;
 	}
@@ -52,7 +52,7 @@ public static class PlatformMenu
 	public static string WhyCantStart( Package game )
 	{
 		if ( !MenuHelpers.HasAuthority ) return "Only the party leader can start a game";
-		if ( game?.Info.IsVrOnly == true && !Application.IsVR ) return "This game needs a VR headset";
+		if ( game is not null && Sandbox.VR.VRGames.WhyCantPlay( game ) is { } why ) return why; // FORK-VR: no flat game in VR either
 
 		return null;
 	}
@@ -107,7 +107,7 @@ public static class PlatformMenu
 	/// <summary>
 	/// Sandbox's Workshop item - the game the platform opens on before anything's been picked
 	/// </summary>
-	public const ulong SandboxWorkshopId = 3832911306;
+	public static ulong SandboxWorkshopId => Sandbox.VR.VRGames.DefaultGame( 3832911306 ); // FORK-VR: Sandbox VR in VR
 
 	/// <summary>
 	/// Local projects opened this run (<c>-rungame path/to/game.sbproj</c>). Never remembered.
@@ -153,7 +153,7 @@ public static class PlatformMenu
 	// Remembered by Workshop id
 	//
 
-	const string GameCookie = "platform.game";
+	static string GameCookie => Sandbox.VR.VRGames.GameCookie( "platform.game" ); // FORK-VR: one for VR, one for the desktop
 	const string RecentCookie = "platform.recent";
 	const int MaxRecent = 16;
 
@@ -364,7 +364,7 @@ public static class PlatformMenu
 		PackageFailed = false;
 
 		// Not in someone else's party, where the leader picks what's played
-		if ( HasOwnMenu( package ) && MenuHelpers.HasAuthority )
+		if ( HasOwnMenu( package ) && MenuHelpers.HasAuthority && Sandbox.VR.VRGames.WhyCantPlay( package ) is null ) // FORK-VR: a menu scene is the game, not loaded where it can't be played
 		{
 			await OpenOwnMenu( package );
 			return;
@@ -394,7 +394,7 @@ public static class PlatformMenu
 		Details = details;
 
 		// Not in someone else's party, where the leader picks what's played
-		var ownMenu = CurrentHasOwnMenu && MenuHelpers.HasAuthority;
+		var ownMenu = CurrentHasOwnMenu && MenuHelpers.HasAuthority && Sandbox.VR.VRGames.WhyCantPlay( Details ) is null; // FORK-VR: same
 		var package = SideloadAsync( id, download: !ownMenu );
 
 		if ( ownMenu && await package is { } loaded && CurrentId == id )

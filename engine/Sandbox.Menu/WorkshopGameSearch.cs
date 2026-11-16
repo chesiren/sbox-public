@@ -26,14 +26,14 @@ public sealed class WorkshopGameSearch
 	{
 		if ( !HasMore ) return [];
 
-		// FORK-VR begin: in VR most pages are filtered empty, which would stop a list that loads more as it's scrolled
+		// FORK-VR begin: a page the VR filter empties would stop a list that loads more as it's scrolled
 		for ( int tries = 0; ; tries++ )
 		{
 			page = page is null ? await query.RunAsync() : await page.GetNextResults();
 			HasMore = page?.HasMoreResults() ?? false;
 
 			var found = await MenuUtility.DetailsOfGamesAsync( page?.Items ?? [] );
-			if ( found.Length > 0 || !HasMore || !Application.IsVR || tries >= 9 ) return found;
+			if ( found.Length > 0 || !HasMore || tries >= 9 ) return found;
 		}
 		// FORK-VR end
 	}

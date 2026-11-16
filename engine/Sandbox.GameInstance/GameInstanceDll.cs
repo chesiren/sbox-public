@@ -780,6 +780,7 @@ internal partial class GameInstanceDll : Engine.IGameInstanceDll
 			{
 				if ( await Package.FetchAsync( ident, false ) is { TypeName: "game" } package && !ct.IsCancellationRequested )
 				{
+					Sandbox.VR.VRGameFilter.ThrowIfCantPlay( package ); // FORK-VR: no flat game in VR, no VR-only game on the desktop
 					LoadingScreen.Media = package.LoadingScreen.MediaUrl;
 					LoadingScreen.Package = package;
 				}
